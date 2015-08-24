@@ -1,21 +1,15 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
 	pageEncoding="ISO-8859-1"%>
-<% response.setHeader("Pragma","no-cache");%>
-<% response.setHeader("Cache-Control","no-store");%>
-<% response.setDateHeader("Expires",-1);%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Assignment Submissions</title>
+<title>Assignment Results</title>
 
 <!-- Bootstrap -->
 <link href="css/bootstrap.min.css" rel="stylesheet">
-<!-- File Picker -->
-<link href="css/fileinput.css" media="all" rel="stylesheet"
-	type="text/css" />
 </head>
 <body>
 	<%if(session.getAttribute("loggedusername") == null || session.getAttribute("loggeduser") == null){
@@ -62,45 +56,38 @@
 
 
 	<div class="container">
-		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-1"></div>
-		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-10">
-			<form id="modalform" class="contact" action="AssignmentHandler"
-				method="post" enctype="multipart/form-data" role="form">
-				<fieldset>
-					<br />
-					<div class="input input-group-lg">
-						<input id="file-0a" name="file-0a" class="file" type="file"
-							accept="application/zip">
-					</div>
-				</fieldset>
-			</form>
+		<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1"></div>
+		<div id="resultdiv" class="col-lg-10 col-md-10 col-sm-10 col-xs-10">
+			
 		</div>
-		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-1"></div>
+		<div class="col-lg-1 col-md-1 col-sm-1 col-xs-1"></div>
+		<input type="hidden" id="loggeduser" name="loggeduser" value='<%=session.getAttribute("loggeduser")%>'>
 	</div>	
 
 
 	<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
 	<script src="js/jquery-1_11_3.min.js"></script>
 	<!-- Include all compiled plugins (below), or include individual files as needed -->
-	<script src="js/fileinput.js" type="text/javascript"></script>
 	<script src="js/bootstrap.min.js"></script>
 	
 	<script>
-		$("#file-0a").fileinput({
-	    	allowedFileExtensions : ['zip'],
-	    	browseClass: "btn btn-info",
-	    	browseLabel: "Browse",
-	    	browseIcon: '<i class="glyphicon glyphicon-folder-open"></i> ',
-	    	removeClass: "btn btn-danger",
-	    	uploadClass: "btn btn-success",
-	        minFileCount: 1,
-	        maxFileCount: 1,
-	        showUpload: true,		        
-	        slugCallback: function(filename) {		        	
-	            return filename.replace('(', '_').replace(']', '_');
-	        }		       
-	        
-	    });	    
+	$(document).ready(function() {
+		$.post('ResultGenerator', function(data){
+			if(data != "fail"){				
+				var jsonarr = data[$('#loggeduser').val()];
+				var tablecode = '<table class="table table-bordered"><tr><th>File Name</th><th>Status</th><th>Feedback</th><th>Timestamp</th></tr>';
+				for(ele in jsonarr){					
+					temp = jsonarr[ele];
+					tablecode = tablecode + "<tr><td>"+temp["filename"]+"</td><td>"+temp["status"]+"</td><td>"+temp["feedback"]+"</td><td>"+temp["timestamp"]+"</td></tr>";
+				}
+				tablecode = tablecode+"</table>";
+				//alert(tablecode);
+				$('#resultdiv').html(tablecode);
+			}
+				
+		});
+	});
 	</script>
+	
 </body>
 </html>

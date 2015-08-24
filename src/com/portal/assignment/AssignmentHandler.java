@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -15,6 +16,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 
 /**
@@ -52,6 +54,15 @@ public class AssignmentHandler extends HttpServlet {
 	protected void process(HttpServletRequest request, HttpServletResponse response){
 		Part filePart;
 		String fileName = "";
+		
+		HttpSession sess = request.getSession(false);
+		try {
+			if(sess == null)
+				response.sendRedirect("index.jsp");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		
 		//Create BASE folder "AssignmentSubmissions" if it does not exist.
 		String submissionPath = File.separator+"tmp"+File.separator+"AssignmentSubmissions";
@@ -91,8 +102,26 @@ public class AssignmentHandler extends HttpServlet {
 				String zipLocation = rawDir.getAbsolutePath()+File.separator+fileName;
 				String extractLocation = extractDir.getAbsolutePath()+File.separator+fileName.split("\\.")[0];
 							
-				unzip(zipLocation, extractLocation);
-				System.out.println("Done");
+				ArrayList<String> results = unzip(zipLocation, extractLocation);
+				if(results != null){
+					DBManager dbm = new DBManager();
+					if(results.get(0).trim().equals("0")){
+						if(!dbm.checkFileExists(fileName.split("\\.")[0]))
+							dbm.insertUserDetails(sess.getAttribute("loggeduser").toString(), fileName.split("\\.")[0], "PASS", "ALL TEST CASES PASSED");
+						else
+							dbm.updateUserDetails(fileName.split("\\.")[0], "PASS", "ALL TEST CASES PASSED");
+					} else {
+						String errStatement = "Error Code: "+results.get(0)+"\n"+"Error: "+results.get(2)+"\n"+"Output: "+results.get(1);
+						if(!dbm.checkFileExists(fileName.split("\\.")[0]))
+							dbm.insertUserDetails(sess.getAttribute("loggeduser").toString(), fileName.split("\\.")[0], "FAIL", errStatement);
+						else
+							dbm.updateUserDetails(fileName.split("\\.")[0], "FAIL", errStatement);
+					}
+					System.out.println("Done");
+				} else {
+					System.out.println("Fail");
+				}
+				
 			}
 			//InputStream fileContent = filePart.getInputStream();
 			
@@ -106,8 +135,10 @@ public class AssignmentHandler extends HttpServlet {
 		PrintWriter pout;
 		try {
 			pout = response.getWriter();
-			if(errs.equals(""))
+			if(errs.equals("")){
 				pout.print("Success");
+				response.sendRedirect("ViewResults.jsp");
+			}
 			else
 				pout.print("Fail");
 		} catch (IOException e) {
@@ -118,6 +149,9 @@ public class AssignmentHandler extends HttpServlet {
 		
 	}
 	
+	/**
+	 * Extracts the FileName (Part)
+	 */
 	private static String getFileName(Part part) {
 		//System.out.println("Header: "+part.getHeaderNames());
 		for (String cd : part.getHeader("content-disposition").split(";")) {
@@ -129,7 +163,13 @@ public class AssignmentHandler extends HttpServlet {
 		return null;
 	}
 	
-	public void unzip(String zipFilePath, String destDirectory) throws IOException {
+	/**
+	 * Creates destination directory if non-existing and places extracted content in it
+	 * @param zipFilePath
+	 * @param destDirectory
+	 * @throws IOException
+	 */
+	public ArrayList<String> unzip(String zipFilePath, String destDirectory) throws IOException {
         File destDir = new File(destDirectory);
         if (!destDir.exists()) {
             destDir.mkdir();
@@ -151,6 +191,13 @@ public class AssignmentHandler extends HttpServlet {
             entry = zipIn.getNextEntry();
         }
         zipIn.close();
+        System.out.println("Evaluating....");
+        Evaluator eva = new Evaluator();
+        eva.processCode(destDirectory);
+        ArrayList<String> execOutput = eva.getOutput();
+        System.out.println("Evaluated !!");
+        //System.out.println(execOutput.toString());
+        return execOutput;
     }
 	
 	/**
