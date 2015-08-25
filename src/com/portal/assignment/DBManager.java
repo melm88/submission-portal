@@ -19,7 +19,7 @@ public class DBManager {
     
     //  Database credentials
     static final String USER = "root";
-    static final String PASS = "mel123";
+    static final String PASS = "root";
 	
 	public DBManager(){
 		

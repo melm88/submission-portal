@@ -33,11 +33,12 @@ public class Evaluator {
 		try {
             
 			//Compile All Java code
-            int compileOP = runProcess("javac "+directoryPATH + File.separator + "*.java", cob);
+			int compileOP = 0;
+            //int compileOP = runProcess("javac "+directoryPATH + File.separator + "*.java", cob);
             //If EQUALS 0 then successful compilation
             //Run the test file (java)
             if(compileOP == 0){
-            	runProcess("java -cp "+directoryPATH+" ShoppingCartTest", cob);
+            	//runProcess("java -cp "+directoryPATH+" ShoppingCartTest", cob);
             	//out.println("Output: "+cob.outputMSG);     
             	//System.out.println("OUTPUT: "+cob.outputMSG);
             	//System.out.println("ExitCode: "+cob.exitCode);
@@ -105,6 +106,6 @@ class CodeObject {
 	public CodeObject(){
 		errorMSG = "";
 		outputMSG = "";
-		exitCode = -1;
+		exitCode = 0; // MAKE IT -1 (when doing adding evaluation logic.
 	}		
 }

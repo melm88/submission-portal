@@ -76,40 +76,51 @@ public class AssignmentHandler extends HttpServlet {
 		if(!rawDir.exists())
 			rawDir.mkdir();
 		
+		//Create userfolder in "RawFiles"
+		String rawPathUser = File.separator+"tmp"+File.separator+"AssignmentSubmissions"+File.separator+"RawFiles"+File.separator+sess.getAttribute("loggeduser");
+		File rawDirUser = new File(rawPathUser);
+		if(!rawDirUser.exists())
+			rawDirUser.mkdir();
+		
 		//Create sub-folder "ExtractedFiles" under BASE folder
 		String extractPath = File.separator+"tmp"+File.separator+"AssignmentSubmissions"+File.separator+"ExtractedFiles";
 		File extractDir = new File(extractPath);
 		if(!extractDir.exists())
 			extractDir.mkdir();
+		
+		String extractPathUser = File.separator+"tmp"+File.separator+"AssignmentSubmissions"+File.separator+"ExtractedFiles"+File.separator+sess.getAttribute("loggeduser");
+		File extractDirUser = new File(extractPathUser);
+		if(!extractDirUser.exists())
+			extractDirUser.mkdir();
 				
 		
 		String errs = "";
 		try {
 			filePart = request.getPart("file-0a");			
-			//fileName = System.currentTimeMillis()+"_"+getFileName(filePart).replaceAll("\\s+", "_");
-			fileName = getFileName(filePart).replaceAll("\\s+", "_");
+			fileName = System.currentTimeMillis()+"_"+getFileName(filePart).replaceAll("\\s+", "_");
+			//fileName = getFileName(filePart).replaceAll("\\s+", "_");
 			if(fileName != null && !fileName.trim().equals("")) {
 				/*
 				 * Download / Create the ZIP file in "RawFiles" folder
 				 */
 				//System.out.println("FileName: "+fileSaveDir.getAbsolutePath()+File.separator+fileName);
-				filePart.write(rawDir.getAbsolutePath()+File.separator+fileName);
+				filePart.write(rawDirUser.getAbsolutePath()+File.separator+fileName);
 				
 				/*
 				 * Extract the contents of the ZIP file and place it in "ExtractedFiles" folder under the foldername of the ZipFile
 				 */
 				
-				String zipLocation = rawDir.getAbsolutePath()+File.separator+fileName;
-				String extractLocation = extractDir.getAbsolutePath()+File.separator+fileName.split("\\.")[0];
+				String zipLocation = rawDirUser.getAbsolutePath()+File.separator+fileName;
+				String extractLocation = extractDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0];
 							
 				ArrayList<String> results = unzip(zipLocation, extractLocation);
 				if(results != null){
 					DBManager dbm = new DBManager();
 					if(results.get(0).trim().equals("0")){
 						if(!dbm.checkFileExists(fileName.split("\\.")[0]))
-							dbm.insertUserDetails(sess.getAttribute("loggeduser").toString(), fileName.split("\\.")[0], "PASS", "ALL TEST CASES PASSED");
+							dbm.insertUserDetails(sess.getAttribute("loggeduser").toString(), fileName.split("\\.")[0], "VERIFYING", "");
 						else
-							dbm.updateUserDetails(fileName.split("\\.")[0], "PASS", "ALL TEST CASES PASSED");
+							dbm.updateUserDetails(fileName.split("\\.")[0], "VERIFYING", "");
 					} else {
 						String errStatement = "Error Code: "+results.get(0)+"\n"+"Error: "+results.get(2)+"\n"+"Output: "+results.get(1);
 						if(!dbm.checkFileExists(fileName.split("\\.")[0]))
