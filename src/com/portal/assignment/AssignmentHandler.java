@@ -111,7 +111,8 @@ public class AssignmentHandler extends HttpServlet {
 				 */
 				
 				String zipLocation = rawDirUser.getAbsolutePath()+File.separator+fileName;
-				String extractLocation = extractDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0];
+				//String extractLocation = extractDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0];
+				String extractLocation = extractDirUser.getAbsolutePath();
 							
 				ArrayList<String> results = unzip(zipLocation, extractLocation);
 				if(results != null){
@@ -181,10 +182,10 @@ public class AssignmentHandler extends HttpServlet {
 	 * @throws IOException
 	 */
 	public ArrayList<String> unzip(String zipFilePath, String destDirectory) throws IOException {
-        File destDir = new File(destDirectory);
+        /*File destDir = new File(destDirectory);
         if (!destDir.exists()) {
             destDir.mkdir();
-        }
+        }*/
         ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFilePath));
         ZipEntry entry = zipIn.getNextEntry();
         // iterates over entries in the zip file
