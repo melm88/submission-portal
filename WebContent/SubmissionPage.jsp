@@ -42,7 +42,8 @@
 					<li class="active"><a href="#">Link <span class="sr-only">(current)</span></a></li>
 					<li><a href="#">Link</a></li>
 				</ul> -->
-				<ul class="nav navbar-nav navbar-right">					
+				<ul class="nav navbar-nav navbar-right">	
+					<li><a href="SubmissionTemplate.jsp">Submission Template</a></li>									
 					<li class="dropdown"><a href="#" class="dropdown-toggle"
 						data-toggle="dropdown" role="button" aria-haspopup="true"
 						aria-expanded="false"> <%=session.getAttribute("loggedusername") %> <span class="caret"></span></a>
@@ -50,7 +51,6 @@
 							<!-- <li><a href="#">..</a></li> -->
 							<li><a href="AjaxLogout">Logout</a></li>
 						</ul></li>
-						<li><a href="ViewResults.jsp">Past Submissions</a></li>	
 				</ul>
 			</div>
 			<!-- /.navbar-collapse -->
@@ -71,9 +71,7 @@
 						<label for="assignmentselection" class="col-sm-2 control-label">Assignment: </label>
 						<div id="myselector" class="col-sm-10">
 							<select id="assignmentselection" name="assignmentselection" class="form-control">
-								<option value="choose">Select Assignment</option>
-								<option value="1">1</option>
-								<option value="2">2</option>
+								<option value="choose">No Assignments Created</option>															
 							</select>
 						</div>
 					</div>
@@ -135,11 +133,17 @@
 				if(data != "fail"){				
 					var jsonarr = data["assignments"];
 					var seloptions = '<select id="assignmentselection" name="assignmentselection" class="form-control"><option value="choose">Select Assignment</option>';
+					var count=0;
 					for(ele in jsonarr){					
 						seloptions = seloptions + '<option value="'+jsonarr[ele]+'">'+jsonarr[ele]+'</option>';
+						count = count + 1;
 					}
-					seloptions = seloptions+"</select>";					
-					$('#myselector').html(seloptions);
+					seloptions = seloptions+"</select>";
+					var seloptions2 = '<select id="assignmentselection" name="assignmentselection" class="form-control"><option value="choose">No Assignments Created</option></select>';
+					if(count!=0)
+						$('#myselector').html(seloptions);
+					else
+						$('#myselector').html(seloptions2);
 				}
 				
 				$('#assignmentselection').on('change', function(e){

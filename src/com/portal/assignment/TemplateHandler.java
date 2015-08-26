@@ -122,7 +122,14 @@ public class TemplateHandler extends HttpServlet {
 		} catch (IllegalStateException | IOException | ServletException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}			
+		} finally {
+			try {
+				response.sendRedirect("SubmissionPage.jsp");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 		
 		
 	}

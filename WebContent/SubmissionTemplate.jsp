@@ -42,7 +42,8 @@
 					<li class="active"><a href="#">Link <span class="sr-only">(current)</span></a></li>
 					<li><a href="#">Link</a></li>
 				</ul> -->
-				<ul class="nav navbar-nav navbar-right">					
+				<ul class="nav navbar-nav navbar-right">
+					<li><a href="SubmissionPage.jsp">Submit Assignment</a></li>						
 					<li class="dropdown"><a href="#" class="dropdown-toggle"
 						data-toggle="dropdown" role="button" aria-haspopup="true"
 						aria-expanded="false"> <%=session.getAttribute("loggedusername") %> <span class="caret"></span></a>
@@ -50,7 +51,6 @@
 							<!-- <li><a href="#">..</a></li> -->
 							<li><a href="AjaxLogout">Logout</a></li>
 						</ul></li>
-						<li><a href="SubmissionPage.jsp">Submit Assignment</a></li>	
 				</ul>
 			</div>
 			<!-- /.navbar-collapse -->
