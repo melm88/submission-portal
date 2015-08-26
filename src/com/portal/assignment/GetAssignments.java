@@ -13,16 +13,16 @@ import javax.servlet.http.HttpSession;
 import org.json.simple.JSONObject;
 
 /**
- * Servlet implementation class ResultGenerator
+ * Servlet implementation class GetAssignments
  */
-@WebServlet("/ResultGenerator")
-public class ResultGenerator extends HttpServlet {
+@WebServlet("/GetAssignments")
+public class GetAssignments extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
     /**
      * @see HttpServlet#HttpServlet()
      */
-    public ResultGenerator() {
+    public GetAssignments() {
         super();
         // TODO Auto-generated constructor stub
     }
@@ -39,10 +39,10 @@ public class ResultGenerator extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
-		processResult(request, response);
+		processAssignmentNames(request, response);
 	}
 	
-	protected void processResult(HttpServletRequest request, HttpServletResponse response) throws IOException {
+	protected void processAssignmentNames(HttpServletRequest request, HttpServletResponse response) throws IOException{
 		
 		HttpSession sess = request.getSession(false);
 		if(sess == null || sess.getAttribute("loggeduser") == null)
@@ -53,25 +53,18 @@ public class ResultGenerator extends HttpServlet {
 		response.setHeader("Access-Control-Allow-Methods", "POST, GET");
 		response.setHeader("Access-Control-Max-Age", "3600");
 		
-		String loggeduser = (String) sess.getAttribute("loggeduser");
-		String assignment = request.getParameter("selector");
-		//System.out.println("in here2 "+loggeduser);
-		//System.out.println("in here2: "+assignment);
+		DBManager dbm = new DBManager();
+		JSONObject jobj = dbm.getAllAssignments();
 		PrintWriter out = response.getWriter();
 		
-		DBManager dbm = new DBManager();
-		JSONObject jres = dbm.getUserProgress(loggeduser, assignment);
-		
-		if(jres != null){
+		if(jobj != null){
 			//System.out.println("jres: "+jres.toString());
-			out.write(jres.toJSONString());
+			out.write(jobj.toJSONString());
 		} else {
 			out.write("fail");
 		}		
 		out.flush();
 		out.close();
-		
-		
 	}
 
 }

@@ -9,7 +9,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Assignment Submissions</title>
+<title>Submissions Page</title>
 
 <!-- Bootstrap -->
 <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -64,18 +64,58 @@
 	<div class="container">
 		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-1"></div>
 		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-10">
-			<form id="modalform" class="contact" action="AssignmentHandler"
-				method="post" enctype="multipart/form-data" role="form">
-				<fieldset>
-					<br />
-					<div class="input input-group-lg">
-						<input id="file-0a" name="file-0a" class="file" type="file"
-							accept="application/zip">
+			
+			<div id="submissiondropdown">
+				<div class="form-horizontal">
+					<div class="form-group">
+						<label for="assignmentselection" class="col-sm-2 control-label">Assignment: </label>
+						<div id="myselector" class="col-sm-10">
+							<select id="assignmentselection" name="assignmentselection" class="form-control">
+								<option value="choose">Select Assignment</option>
+								<option value="1">1</option>
+								<option value="2">2</option>
+							</select>
+						</div>
 					</div>
-				</fieldset>
-			</form>
+				</div>				
+			</div>
+			
+			<div id="submissionstructure">
+				<div class="panel panel-default">
+				  <div class="panel-heading">
+				    <h3 class="panel-title">Submission File - Structure</h3>
+				  </div>
+				  <div class="panel-body">
+				    Panel content
+				  </div>
+				</div>
+			</div>
+			
+			<div id="submissiondiv">
+				<form id="modalform" class="contact" action="AssignmentHandler"
+					method="post" enctype="multipart/form-data" role="form">
+					<fieldset>
+						<br />
+						<div class="input input-group-lg">
+							<input id="file-0a" name="file-0a" class="file" type="file"
+								accept="application/zip">
+							<input type="hidden" name="selectedattribute" id="selectedattribute" value=""></input>
+						</div>
+					</fieldset>
+				</form>
+			</div>
+			
+			<div id="submissionresult">
+				<h3>Submissions: </h3>
+				<div id="resultdiv">
+					<blockquote>
+						<p>No Submissions yet !</p>		
+					</blockquote>	
+				</div>
+			</div>
+			<input type="hidden" id="loggeduser" name="loggeduser" value='<%=session.getAttribute("loggeduser")%>'>
 		</div>
-		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-1"></div>
+		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-1"><%if(session.getAttribute("flashmsg")!=null){ %><span id="flashmsg"><%=session.getAttribute("flashmsg") %></span><% session.removeAttribute("flashmsg"); }%></div>
 	</div>	
 
 
@@ -86,6 +126,57 @@
 	<script src="js/bootstrap.min.js"></script>
 	
 	<script>
+		$(document).ready(function(){
+			$('#submissionstructure').hide();
+			$('#submissiondiv').hide();
+			$('#submissionresult').hide();			
+			
+			$.post('GetAssignments', function(data){
+				if(data != "fail"){				
+					var jsonarr = data["assignments"];
+					var seloptions = '<select id="assignmentselection" name="assignmentselection" class="form-control"><option value="choose">Select Assignment</option>';
+					for(ele in jsonarr){					
+						seloptions = seloptions + '<option value="'+jsonarr[ele]+'">'+jsonarr[ele]+'</option>';
+					}
+					seloptions = seloptions+"</select>";					
+					$('#myselector').html(seloptions);
+				}
+				
+				$('#assignmentselection').on('change', function(e){
+					var value = this.value;
+					if(value != "choose"){
+						$('#submissionstructure').show();
+						$('#submissiondiv').show();
+						$('#selectedattribute').val(value);
+						$('#submissionresult').show();
+						$.post('ResultGenerator', {selector: $('#assignmentselection').val()}, function(data){
+							if(data != "fail"){				
+								var jsonarr = data[$('#loggeduser').val()];
+								var tablecode = '<table class="table table-bordered"><tr><th>File Name</th><th>Status</th><th>Score</th><th>Timestamp</th></tr>';
+								var counts = 0;
+								for(ele in jsonarr){					
+									temp = jsonarr[ele];
+									tablecode = tablecode + "<tr><td>"+temp["filename"]+"</td><td>"+temp["status"]+"</td><td>&nbsp;</td><td>"+temp["timestamp"]+"</td></tr>";
+									counts = counts+1;
+								}
+								tablecode = tablecode+"</table>";
+								//alert(tablecode);
+								if(counts>0)
+									$('#resultdiv').html(tablecode);
+							}								
+						});
+					} else {
+						$('#selectedattribute').val("");
+						$('#submissionstructure').hide();
+						$('#submissiondiv').hide();
+						$('#submissionresult').hide();
+					}
+				});
+					
+			});
+			
+		});
+		
 		$("#file-0a").fileinput({
 	    	allowedFileExtensions : ['zip'],
 	    	browseClass: "btn btn-info",

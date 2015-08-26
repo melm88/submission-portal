@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -18,6 +19,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
+
+import org.json.simple.JSONObject;
 
 /**
  * Servlet implementation class AssignmentHandler
@@ -64,6 +67,9 @@ public class AssignmentHandler extends HttpServlet {
 			e1.printStackTrace();
 		}
 		
+		String AssignmentName = request.getParameter("selectedattribute");
+		System.out.println("AssignmentName: "+AssignmentName);
+		
 		//Create BASE folder "AssignmentSubmissions" if it does not exist.
 		String submissionPath = File.separator+"tmp"+File.separator+"AssignmentSubmissions";
 		File submissionDir = new File(submissionPath);
@@ -76,8 +82,14 @@ public class AssignmentHandler extends HttpServlet {
 		if(!rawDir.exists())
 			rawDir.mkdir();
 		
+		//Create sub-folder "RawFiles" under BASE folder
+		String rawAssgnPath = File.separator+"tmp"+File.separator+"AssignmentSubmissions"+File.separator+"RawFiles"+File.separator+AssignmentName;
+		File rawAssgnDir = new File(rawAssgnPath);
+		if(!rawAssgnDir.exists())
+			rawAssgnDir.mkdir();
+		
 		//Create userfolder in "RawFiles"
-		String rawPathUser = File.separator+"tmp"+File.separator+"AssignmentSubmissions"+File.separator+"RawFiles"+File.separator+sess.getAttribute("loggeduser");
+		String rawPathUser = File.separator+"tmp"+File.separator+"AssignmentSubmissions"+File.separator+"RawFiles"+File.separator+AssignmentName+File.separator+sess.getAttribute("loggeduser");
 		File rawDirUser = new File(rawPathUser);
 		if(!rawDirUser.exists())
 			rawDirUser.mkdir();
@@ -88,51 +100,82 @@ public class AssignmentHandler extends HttpServlet {
 		if(!extractDir.exists())
 			extractDir.mkdir();
 		
-		String extractPathUser = File.separator+"tmp"+File.separator+"AssignmentSubmissions"+File.separator+"ExtractedFiles"+File.separator+sess.getAttribute("loggeduser");
+		//Create sub-folder "ExtractedFiles" under BASE folder
+		String extractAssgnPath = File.separator+"tmp"+File.separator+"AssignmentSubmissions"+File.separator+"ExtractedFiles"+File.separator+AssignmentName;
+		File extractAssgnDir = new File(extractAssgnPath);
+		if(!extractAssgnDir.exists())
+			extractAssgnDir.mkdir();		
+		
+		String extractPathUser = File.separator+"tmp"+File.separator+"AssignmentSubmissions"+File.separator+"ExtractedFiles"+File.separator+AssignmentName+File.separator+sess.getAttribute("loggeduser");
 		File extractDirUser = new File(extractPathUser);
 		if(!extractDirUser.exists())
 			extractDirUser.mkdir();
 				
 		
 		String errs = "";
+		boolean folder_desc_state = false;
 		try {
 			filePart = request.getPart("file-0a");			
-			fileName = System.currentTimeMillis()+"_"+getFileName(filePart).replaceAll("\\s+", "_");
-			//fileName = getFileName(filePart).replaceAll("\\s+", "_");
+			//fileName = System.currentTimeMillis()+"_"+getFileName(filePart).replaceAll("\\s+", "_");
+			fileName = getFileName(filePart).replaceAll("\\s+", "_");
 			if(fileName != null && !fileName.trim().equals("")) {
-				/*
-				 * Download / Create the ZIP file in "RawFiles" folder
-				 */
-				//System.out.println("FileName: "+fileSaveDir.getAbsolutePath()+File.separator+fileName);
-				filePart.write(rawDirUser.getAbsolutePath()+File.separator+fileName);
 				
-				/*
-				 * Extract the contents of the ZIP file and place it in "ExtractedFiles" folder under the foldername of the ZipFile
-				 */
-				
-				String zipLocation = rawDirUser.getAbsolutePath()+File.separator+fileName;
-				//String extractLocation = extractDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0];
-				String extractLocation = extractDirUser.getAbsolutePath();
-							
-				ArrayList<String> results = unzip(zipLocation, extractLocation);
-				if(results != null){
-					DBManager dbm = new DBManager();
-					if(results.get(0).trim().equals("0")){
-						if(!dbm.checkFileExists(fileName.split("\\.")[0]))
-							dbm.insertUserDetails(sess.getAttribute("loggeduser").toString(), fileName.split("\\.")[0], "VERIFYING", "");
-						else
-							dbm.updateUserDetails(fileName.split("\\.")[0], "VERIFYING", "");
+					/*
+					 * Download / Create the ZIP file in "RawFiles" folder
+					 */
+					//System.out.println("FileName: "+fileSaveDir.getAbsolutePath()+File.separator+fileName);
+					filePart.write(rawDirUser.getAbsolutePath()+File.separator+fileName);
+					
+					String zipLocation = rawDirUser.getAbsolutePath()+File.separator+fileName;
+					//String extractLocation = extractDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0];
+					String extractLocation = extractDirUser.getAbsolutePath();
+					
+					folder_desc_state = checkFolderDescription(zipLocation, AssignmentName);
+					System.out.println("state : "+folder_desc_state);
+					if(folder_desc_state){
+						
+					/*
+					 * Extract the contents of the ZIP file and place it in "ExtractedFiles" folder under the foldername of the ZipFile
+					 */
+					
+								
+					//ArrayList<String> results = unzip(zipLocation, extractLocation);
+					unzip(zipLocation, extractLocation);
+					
+					/*if(results != null){
+						DBManager dbm = new DBManager();
+						if(results.get(0).trim().equals("0")){
+							if(!dbm.checkFileExists(fileName.split("\\.")[0]))
+								dbm.insertUserDetails(sess.getAttribute("loggeduser").toString(), fileName.split("\\.")[0], "VERIFYING", "");
+							else
+								dbm.updateUserDetails(fileName.split("\\.")[0], "VERIFYING", "");
+						} else {
+							String errStatement = "Error Code: "+results.get(0)+"\n"+"Error: "+results.get(2)+"\n"+"Output: "+results.get(1);
+							if(!dbm.checkFileExists(fileName.split("\\.")[0]))
+								dbm.insertUserDetails(sess.getAttribute("loggeduser").toString(), fileName.split("\\.")[0], "FAIL", errStatement);
+							else
+								dbm.updateUserDetails(fileName.split("\\.")[0], "FAIL", errStatement);
+						}
+						System.out.println("Done");
 					} else {
-						String errStatement = "Error Code: "+results.get(0)+"\n"+"Error: "+results.get(2)+"\n"+"Output: "+results.get(1);
-						if(!dbm.checkFileExists(fileName.split("\\.")[0]))
-							dbm.insertUserDetails(sess.getAttribute("loggeduser").toString(), fileName.split("\\.")[0], "FAIL", errStatement);
-						else
-							dbm.updateUserDetails(fileName.split("\\.")[0], "FAIL", errStatement);
+						System.out.println("Fail");
+					}*/
+					
+					DBManager dbm = new DBManager();
+					//System.out.println(dbm.checkFileExists(fileName.split("\\.")[0], AssignmentName, sess.getAttribute("loggeduser").toString()));
+					if(!dbm.checkFileExists(fileName.split("\\.")[0], AssignmentName, sess.getAttribute("loggeduser").toString())){
+						dbm.insertUserDetails(sess.getAttribute("loggeduser").toString(), AssignmentName, fileName.split("\\.")[0], "VERIFYING", "");
+					} else {
+						dbm.updateUserDetails(fileName.split("\\.")[0], AssignmentName, fileName.split("\\.")[0], "VERIFYING", "");
 					}
-					System.out.println("Done");
 				} else {
-					System.out.println("Fail");
+					System.out.println("Deleting......");
+					File fremove = new File(zipLocation);
+					System.out.println(fremove.getAbsolutePath());
+					System.out.println(fremove.delete());					
 				}
+				
+				
 				
 			}
 			//InputStream fileContent = filePart.getInputStream();
@@ -146,13 +189,20 @@ public class AssignmentHandler extends HttpServlet {
 		
 		PrintWriter pout;
 		try {
+			
 			pout = response.getWriter();
 			if(errs.equals("")){
 				pout.print("Success");
-				response.sendRedirect("ViewResults.jsp");
+				sess.setAttribute("flashmsg","Success");
 			}
-			else
+			else{
 				pout.print("Fail");
+				sess.setAttribute("flashmsg","Fail");
+			}
+			if(!folder_desc_state){
+				sess.setAttribute("flashmsg","Zip-file content mis-match");
+			}
+			response.sendRedirect("SubmissionPage.jsp");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -181,7 +231,7 @@ public class AssignmentHandler extends HttpServlet {
 	 * @param destDirectory
 	 * @throws IOException
 	 */
-	public ArrayList<String> unzip(String zipFilePath, String destDirectory) throws IOException {
+	public void unzip(String zipFilePath, String destDirectory) throws IOException {
         /*File destDir = new File(destDirectory);
         if (!destDir.exists()) {
             destDir.mkdir();
@@ -203,13 +253,14 @@ public class AssignmentHandler extends HttpServlet {
             entry = zipIn.getNextEntry();
         }
         zipIn.close();
-        System.out.println("Evaluating....");
+        
+        /*System.out.println("Evaluating....");
         Evaluator eva = new Evaluator();
         eva.processCode(destDirectory);
         ArrayList<String> execOutput = eva.getOutput();
         System.out.println("Evaluated !!");
         //System.out.println(execOutput.toString());
-        return execOutput;
+        return execOutput;*/
     }
 	
 	/**
@@ -227,5 +278,50 @@ public class AssignmentHandler extends HttpServlet {
         }
         bos.close();
     }
+    
+    public boolean checkFolderDescription(String zipFilePath, String Assignment) throws IOException {
+		
+		DBManager dbm = new DBManager();
+		JSONObject jobj = new JSONObject();
+		jobj = dbm.getSubmissionTemplate(Assignment);
+		String folder = (String) jobj.get("folders");
+		String files = (String) jobj.get("filenames");
+		String[] folderslist = folder.substring(1, folder.length() - 1).split(", ");
+		String[] fileslist = files.substring(1, files.length() - 1).split(",");
+		String[] tempfolderlist = new String[folderslist.length];
+		String[] tempfilelist = new String[fileslist.length];
+		int count = 0;
+		for(String item: folderslist){
+			tempfolderlist[count] = item.trim();
+			count+=1;
+		}
+		count = 0;
+		for(String item: fileslist){
+			tempfilelist[count] = item.trim();
+			count+=1;
+		}
+		ArrayList<String> folderNames = new ArrayList<String>(Arrays.asList(tempfolderlist));
+		ArrayList<String> fileNames = new ArrayList<String>(Arrays.asList(tempfilelist));
+		ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFilePath));
+	       ZipEntry entry = zipIn.getNextEntry();
+	       // iterates over entries in the zip file
+	       while (entry != null) {	          
+	           if (!entry.isDirectory()) {
+	           	if(!fileNames.contains(entry.getName())){
+	           		zipIn.close();
+	           		return false;	     
+	           	}
+	           } else {	        	   
+	           	if(!folderNames.contains(entry.getName())){
+	           		zipIn.close();
+	           		return false;
+	           	}
+	           }
+	           zipIn.closeEntry();
+	           entry = zipIn.getNextEntry();
+	       }
+	    zipIn.close();
+		return true;
+	}
 
 }
