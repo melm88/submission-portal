@@ -21,7 +21,7 @@ public class DBManager {
     
     //  Database credentials
     static final String USER = "root";
-    static final String PASS = "mel123";
+    static final String PASS = "root";
 	
 	public DBManager(){
 		
@@ -358,5 +358,37 @@ public class DBManager {
 		 return null;
 	 }
 
-
+// get the no of versions of same assignment of the user
+	 public int getVersionCount(String mailId, String assignment){
+		 	int count = 0;
+		 	Connection conn = openConnection();
+	    	PreparedStatement stmt = null;
+	    	// Execute SQL query
+	        try {
+	        	String sql = "SELECT filename FROM ASSIGNMENTS WHERE assignmentname=? AND emailid=?";
+				stmt = conn.prepareStatement(sql);
+				stmt.setString(1, assignment);
+				stmt.setString(2, mailId);
+				ResultSet rs = stmt.executeQuery();
+				//System.out.println("InsertUserDetails state: "+state+" | "+name+","+pwd+","+role+church);
+				if(rs!=null){
+					while(rs.next()){
+						count++;
+					}
+				}				
+				
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} finally {
+				try {
+					stmt.close();
+					closeConnection(conn);
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+	        return count;
+	 }
 }

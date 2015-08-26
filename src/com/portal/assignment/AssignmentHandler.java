@@ -3,10 +3,12 @@ package com.portal.assignment;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -18,6 +20,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
+
+import org.json.simple.JSONObject;
 
 /**
  * Servlet implementation class AssignmentHandler
@@ -96,10 +100,34 @@ public class AssignmentHandler extends HttpServlet {
 		
 		String errs = "";
 		try {
-			filePart = request.getPart("file-0a");			
-			fileName = System.currentTimeMillis()+"_"+getFileName(filePart).replaceAll("\\s+", "_");
+			filePart = request.getPart("file-0a");	
+			String assignmentName = "1"; //get assignmentname
+			
+			//Version Control
+			DBManager dbm = new DBManager();
+			int count = dbm.getVersionCount(sess.getAttribute("loggeduser").toString(), assignmentName);
+			if(count > 0) {
+				//rename old recent folder here	with version
+				File dir = new File("dir");
+				File toDir = new File("newDir");
+				renameDirectory(dir,toDir);
+				//rename old recent zipfile here with version
+				
+			}
+			
+					
+			//Version Control
+			
+			fileName = getFileName(filePart).replaceAll("\\s+", "_");
 			//fileName = getFileName(filePart).replaceAll("\\s+", "_");
 			if(fileName != null && !fileName.trim().equals("")) {
+				String zipLocation = rawDirUser.getAbsolutePath()+File.separator+fileName;
+				boolean state = checkFolderDescription(zipLocation, assignmentName);
+				if(state) {
+					//code run
+				} else {
+					//redirect to submission page saying given zip file doesn't contain the expected folders/files
+				}
 				/*
 				 * Download / Create the ZIP file in "RawFiles" folder
 				 */
@@ -110,13 +138,14 @@ public class AssignmentHandler extends HttpServlet {
 				 * Extract the contents of the ZIP file and place it in "ExtractedFiles" folder under the foldername of the ZipFile
 				 */
 				
-				String zipLocation = rawDirUser.getAbsolutePath()+File.separator+fileName;
+				//String zipLocation = rawDirUser.getAbsolutePath()+File.separator+fileName;
 				//String extractLocation = extractDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0];
 				String extractLocation = extractDirUser.getAbsolutePath();
 							
 				ArrayList<String> results = unzip(zipLocation, extractLocation);
+				//System.out.println(checkFolderDescription(zipLocation, "1"));
 				if(results != null){
-					DBManager dbm = new DBManager();
+					//DBManager dbm = new DBManager();
 					if(results.get(0).trim().equals("0")){
 						if(!dbm.checkFileExists(fileName.split("\\.")[0]))
 							dbm.insertUserDetails(sess.getAttribute("loggeduser").toString(), fileName.split("\\.")[0], "VERIFYING", "");
@@ -161,6 +190,8 @@ public class AssignmentHandler extends HttpServlet {
 		
 	}
 	
+
+
 	/**
 	 * Extracts the FileName (Part)
 	 */
@@ -174,7 +205,38 @@ public class AssignmentHandler extends HttpServlet {
 		}
 		return null;
 	}
-	
+	public boolean checkFolderDescription(String zipFilePath, String Assignment) throws IOException {
+		
+		DBManager dbm = new DBManager();
+		JSONObject jobj = new JSONObject();
+		jobj = dbm.getSubmissionTemplate(Assignment);
+		String folder = (String) jobj.get("folders");
+		String files = (String) jobj.get("filenames");
+		String[] folderslist = folder.substring(1, folder.length() - 1).split(",");
+		String[] fileslist = files.substring(1, files.length() - 1).split(",");
+		System.out.println("Folders :   " + folderslist.toString());
+		System.out.println("Files :   " + fileslist.toString());
+		ArrayList<String> folderNames = new ArrayList<String>(Arrays.asList(folderslist));
+		ArrayList<String> fileNames = new ArrayList<String>(Arrays.asList(fileslist));
+		ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFilePath));
+	        ZipEntry entry = zipIn.getNextEntry();
+	        // iterates over entries in the zip file
+	        while (entry != null) {
+	           
+	            if (!entry.isDirectory()) {
+	            	if(!fileNames.contains(entry.getName()))
+	            		return false;
+	            	
+	            } else {
+	            	if(!folderNames.contains(entry.getName()))
+	            		return false;
+	            }
+	            zipIn.closeEntry();
+	            entry = zipIn.getNextEntry();
+	        }
+	        zipIn.close();
+		return true;
+	}
 	/**
 	 * Creates destination directory if non-existing and places extracted content in it
 	 * @param zipFilePath
@@ -228,4 +290,16 @@ public class AssignmentHandler extends HttpServlet {
         bos.close();
     }
 
+    
+    
+	private void renameDirectory(File dir, File toDir) {
+		// TODO Auto-generated method stub
+		if(dir.isDirectory()) {
+			dir.renameTo(toDir);
+		}
+	}
+    
+	private void renameZip(File oldName, String newName){
+		oldName.renameTo(new File(newName));
+	}
 }
