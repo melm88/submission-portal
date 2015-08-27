@@ -20,7 +20,7 @@
 <body>
 	<%if(session.getAttribute("loggedusername") == null || session.getAttribute("loggeduser") == null){
 		response.sendRedirect("index.jsp");
-	}%>
+	} else {%>
 	<nav class="navbar navbar-default">
 		<div class="container-fluid">
 			<!-- Brand and toggle get grouped for better mobile display -->
@@ -42,8 +42,10 @@
 					<li class="active"><a href="#">Link <span class="sr-only">(current)</span></a></li>
 					<li><a href="#">Link</a></li>
 				</ul> -->
-				<ul class="nav navbar-nav navbar-right">	
-					<li><a href="SubmissionTemplate.jsp">Submission Template</a></li>									
+				<ul class="nav navbar-nav navbar-right">
+					<%if(session.getAttribute("loggeduser").equals("pg@taramt.com") || session.getAttribute("loggeduser").equals("melvin.m@taramt.com")){%>
+						<li><a href="SubmissionTemplate.jsp">Submission Template</a></li>
+					<%} %>															
 					<li class="dropdown"><a href="#" class="dropdown-toggle"
 						data-toggle="dropdown" role="button" aria-haspopup="true"
 						aria-expanded="false"> <%=session.getAttribute("loggedusername") %> <span class="caret"></span></a>
@@ -83,7 +85,7 @@
 				  <div class="panel-heading">
 				    <h3 class="panel-title">Submission File - Structure</h3>
 				  </div>
-				  <div class="panel-body">
+				  <div id="structurebody" class="panel-body">
 				    Panel content
 				  </div>
 				</div>
@@ -153,6 +155,36 @@
 						$('#submissiondiv').show();
 						$('#selectedattribute').val(value);
 						$('#submissionresult').show();
+						$.post('AjaxGetTemplate', {selector: $('#assignmentselection').val()}, function(data){
+							//alert(data);
+							if(data != "fail"){				
+								var jsonarrfolder = data["folders"];
+								var jsonarrfiles = data["filenames"];
+								jsonarrfolder = jsonarrfolder.substring(1,jsonarrfolder.length-1);
+								jsonarrfiles = jsonarrfiles.substring(1, jsonarrfiles.length-1);
+								jsonarrfolder = jsonarrfolder.split(", ");
+								jsonarrfiles = jsonarrfiles.split(", ");
+								var output = "";
+								var single_files = "";
+								for(ele in jsonarrfolder){
+									var temp = jsonarrfolder[ele];
+									//alert(temp);
+									output = output + "<p>&nbsp;&nbsp;<span class='glyphicon glyphicon-folder-open'></span> <b>" +temp.substring(0,temp.indexOf('/')) + " : </b></p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+									for(i in jsonarrfiles){
+										if(jsonarrfiles[i].indexOf(temp)!=-1){
+											output = output + "<span class='glyphicon glyphicon-file'></span>"+jsonarrfiles[i].substring(jsonarrfiles[i].indexOf('/')+1, jsonarrfiles[i].length) + ", ";
+										} else {
+											if(jsonarrfiles[i].indexOf("/")==-1)
+												single_files = single_files + "<span class='glyphicon glyphicon-file'></span>" + jsonarrfiles[i].substring(jsonarrfiles[i].indexOf('//')+1, jsonarrfiles[i].length) + ", ";
+										}											
+									}
+									output = output.substring(0, output.lastIndexOf(",")) + "<br/>";
+								}
+								output = output + "&nbsp;&nbsp;" + single_files.substring(0, single_files.lastIndexOf(","));
+								//alert(output);
+								$('#structurebody').html(output);
+							}								
+						});
 						$.post('ResultGenerator', {selector: $('#assignmentselection').val()}, function(data){
 							if(data != "fail"){				
 								var jsonarr = data[$('#loggeduser').val()];
@@ -160,7 +192,7 @@
 								var counts = 0;
 								for(ele in jsonarr){					
 									temp = jsonarr[ele];
-									tablecode = tablecode + "<tr><td>"+temp["filename"]+"</td><td>"+temp["status"]+"</td><td>&nbsp;</td><td>"+temp["timestamp"]+"</td></tr>";
+									tablecode = tablecode + "<tr><td>"+temp["filename"]+"</td><td>"+temp["status"]+"</td><td>"+temp["score"]+"</td><td>"+temp["timestamp"]+"</td></tr>";
 									counts = counts+1;
 								}
 								tablecode = tablecode+"</table>";
@@ -197,5 +229,6 @@
 	        
 	    });	    
 	</script>
+	<%} %>
 </body>
 </html>

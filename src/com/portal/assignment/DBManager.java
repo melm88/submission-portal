@@ -8,8 +8,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -35,7 +37,7 @@ public class DBManager {
 			stmt1.executeUpdate(sql);
 			stmt2 = con.createStatement();
 			sql = "CREATE TABLE IF NOT EXISTS SUBMISSIONTEMPLATE ("
-					+"assignmentname VARCHAR(255) not null, zipfile VARCHAR(255), folder TEXT, "
+					+"assignmentname VARCHAR(255) not null, zipfile VARCHAR(255), testcase VARCHAR(255), folder TEXT, "
 					+"filenames TEXT, createdon VARCHAR(255), PRIMARY KEY(assignmentname))";
 			stmt2.executeUpdate(sql);
 			stmt3 = con.createStatement();
@@ -133,18 +135,19 @@ public class DBManager {
 			}	
 	}
 	 
-	 public void insertSubmissionTemplate(String assignment,String zipname, String foldername, String filename){
+	 public void insertSubmissionTemplate(String assignment,String zipname, String testfile, String foldername, String filename){
 		 	Connection conn = openConnection();
 	    	PreparedStatement stmt = null;
 	    	
-	    	String sql = "INSERT INTO SUBMISSIONTEMPLATE(assignmentname, zipfile, folder, filenames, createdon) VALUES (?,?,?,?,?)";
+	    	String sql = "INSERT INTO SUBMISSIONTEMPLATE(assignmentname, zipfile, testcase, folder, filenames, createdon) VALUES (?,?,?,?,?,?)";
 			try {
 				stmt = conn.prepareStatement(sql);
 				stmt.setString(1, assignment);
 				stmt.setString(2, zipname);
-				stmt.setString(3, foldername);
-				stmt.setString(4, filename);
-				stmt.setString(5, getDBTimestamp());
+				stmt.setString(3, testfile);
+				stmt.setString(4, foldername);
+				stmt.setString(5, filename);
+				stmt.setString(6, getDBTimestamp());
 				int state = stmt.executeUpdate();
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
@@ -160,19 +163,20 @@ public class DBManager {
 			}		 											
 	 }
 	 
-	 public void updateSubmissionTemplate(String assignment, String zipname, String foldername, String filename) {
+	 public void updateSubmissionTemplate(String assignment, String zipname, String testfile, String foldername, String filename) {
 		 	Connection conn = openConnection();
 	    	PreparedStatement stmt = null;
 	    	
 	    	// Execute SQL query
 	        try {
-	        	String sql = "UPDATE SUBMISSIONTEMPLATE SET zipfile=?, folder=?, filenames=?, createdon=? WHERE assignmentname=?";
+	        	String sql = "UPDATE SUBMISSIONTEMPLATE SET zipfile=?, testcase=?, folder=?, filenames=?, createdon=? WHERE assignmentname=?";
 				stmt = conn.prepareStatement(sql);
 				stmt.setString(1, zipname);
-				stmt.setString(2, foldername);
-				stmt.setString(3, filename);
-				stmt.setString(4, getDBTimestamp());
-				stmt.setString(5, assignment);
+				stmt.setString(2, testfile);
+				stmt.setString(3, foldername);
+				stmt.setString(4, filename);
+				stmt.setString(5, getDBTimestamp());
+				stmt.setString(6, assignment);
 				int state = stmt.executeUpdate();
 				//System.out.println("InsertUserDetails state: "+state+" | "+name+","+pwd+","+role+church);
 				
@@ -256,6 +260,37 @@ public class DBManager {
 	        return false;
 	 }
 	 
+	 public String getTestCaseFileName(String assignment){
+		 Connection conn = openConnection();
+	    	PreparedStatement stmt = null;
+	    	// Execute SQL query
+	        try {
+	        	String sql = "SELECT testcase FROM SUBMISSIONTEMPLATE WHERE assignmentname=?";
+				stmt = conn.prepareStatement(sql);
+				stmt.setString(1, assignment);			
+				ResultSet rs = stmt.executeQuery();
+				//System.out.println("InsertUserDetails state: "+state+" | "+name+","+pwd+","+role+church);
+				if(rs!=null){
+					while(rs.next()){
+						return rs.getString(1);
+					}
+				}				
+				
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} finally {
+				try {
+					stmt.close();
+					closeConnection(conn);
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+	        return "";
+	 }
+	 
 	 public JSONObject getAllAssignments(){
 		 	Connection conn = openConnection();
 	    	PreparedStatement stmt = null;
@@ -329,6 +364,80 @@ public class DBManager {
         return false;
 	 }
 	 
+	 public ArrayList<ArrayList<String>> getUnProcessedAssignments(){
+		Connection conn = openConnection();
+	    PreparedStatement stmt = null;
+	    // Execute SQL query
+	    //System.out.println("checkFileExists: "+emailid+" "+assignment+" "+filename);
+        try {
+        	String sql = "SELECT emailid, assignmentname, filename FROM ASSIGNMENTS WHERE status=?";
+			stmt = conn.prepareStatement(sql);
+			stmt.setString(1, "VERIFYING");
+			ResultSet rs = stmt.executeQuery();
+			//System.out.println("InsertUserDetails state: "+state+" | "+name+","+pwd+","+role+church);
+			if(rs!=null){
+				//System.out.println("inside...");
+				ArrayList<ArrayList<String>> maintemp = new ArrayList<ArrayList<String>>();
+				while(rs.next()){
+					//System.out.println("CHECKFILE: true");
+					ArrayList<String> temp = new ArrayList<String>();
+					temp.add(rs.getString(1));
+					temp.add(rs.getString(2));
+					temp.add(rs.getString(3));
+					maintemp.add(temp);
+				}
+				return maintemp;
+			}
+			
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			try {
+				stmt.close();
+				closeConnection(conn);
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+        return null;
+	 }
+	 
+	 public void updateProcessedScoreFeedback(String emailid, String assignment, String filename, String status, String feedback, String score) {
+		 	Connection conn = openConnection();
+	    	PreparedStatement stmt = null;
+	    	
+	    	// Execute SQL query
+	        try {
+	        	String sql = "UPDATE ASSIGNMENTS SET status=?, score=?, feedback=? WHERE filename=? and assignmentname=? and emailid=?";
+				stmt = conn.prepareStatement(sql);
+				stmt.setString(1, status);
+				stmt.setString(2, score);
+				stmt.setString(3, feedback);
+				stmt.setString(4, filename);
+				stmt.setString(5, assignment);
+				stmt.setString(6, emailid);
+
+				int state = stmt.executeUpdate();
+				//System.out.println("InsertUserDetails state: "+state+" | "+name+","+pwd+","+role+church);
+				
+				
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} finally {
+				try {
+					stmt.close();
+					closeConnection(conn);
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}	
+	 }
+	 
 	 public void updateUserDetails(String emailid, String assignment, String filename, String status, String feedback) {
 		 	Connection conn = openConnection();
 	    	PreparedStatement stmt = null;
@@ -361,6 +470,72 @@ public class DBManager {
 			}	
 	 }
 	 
+	 public void updateVersion(String emailid, String assignment, String oldfilename, String newfilename) {
+		 	Connection conn = openConnection();
+	    	PreparedStatement stmt = null;
+	    	
+	    	// Execute SQL query
+	        try {
+	        	String sql = "UPDATE ASSIGNMENTS SET filename=? WHERE filename=? and assignmentname=? and emailid=?";
+				stmt = conn.prepareStatement(sql);
+				stmt.setString(1, newfilename);
+				stmt.setString(2, oldfilename);
+				stmt.setString(3, assignment);
+				stmt.setString(4, emailid);
+
+				int state = stmt.executeUpdate();
+				//System.out.println("InsertUserDetails state: "+state+" | "+name+","+pwd+","+role+church);
+				
+				
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} finally {
+				try {
+					stmt.close();
+					closeConnection(conn);
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}	
+	 }
+	 
+	// get the no of versions of same assignment of the user
+		public int getVersionCount(String mailId, String assignment){
+				int count = 0;
+				Connection conn = openConnection();
+		   	PreparedStatement stmt = null;
+		   	// Execute SQL query
+		       try {
+		       	String sql = "SELECT filename FROM ASSIGNMENTS WHERE assignmentname=? AND emailid=?";
+					stmt = conn.prepareStatement(sql);
+					stmt.setString(1, assignment);
+					stmt.setString(2, mailId);
+					ResultSet rs = stmt.executeQuery();
+					//System.out.println("InsertUserDetails state: "+state+" | "+name+","+pwd+","+role+church);
+					if(rs!=null){
+						while(rs.next()){
+							count++;
+						}
+					}				
+					
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} finally {
+					try {
+						stmt.close();
+						closeConnection(conn);
+					} catch (SQLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+		       return count;
+		}
+	 
+	 
 	 public JSONObject getUserProgress(String emailid, String assignment){
 		 	Connection conn = openConnection();
 		    PreparedStatement stmt = null;
@@ -382,6 +557,7 @@ public class DBManager {
 						temp.put("filename", rs.getString("filename"));
 						temp.put("status", rs.getString("status"));
 						temp.put("feedback", rs.getString("feedback"));
+						temp.put("score", rs.getString("score"));
 						temp.put("timestamp", rs.getString("submissiontime"));
 						jarr.add(temp);
 					}

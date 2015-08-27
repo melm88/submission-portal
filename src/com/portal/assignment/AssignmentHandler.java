@@ -1,10 +1,15 @@
 package com.portal.assignment;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,6 +25,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 
+import org.apache.commons.io.FileDeleteStrategy;
+import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
 
 /**
@@ -110,6 +117,8 @@ public class AssignmentHandler extends HttpServlet {
 		File extractDirUser = new File(extractPathUser);
 		if(!extractDirUser.exists())
 			extractDirUser.mkdir();
+		
+		String rawTestPath = File.separator+"tmp"+File.separator+"AssignmentTestCases"+File.separator+AssignmentName;
 				
 		
 		String errs = "";
@@ -119,28 +128,67 @@ public class AssignmentHandler extends HttpServlet {
 			//fileName = System.currentTimeMillis()+"_"+getFileName(filePart).replaceAll("\\s+", "_");
 			fileName = getFileName(filePart).replaceAll("\\s+", "_");
 			if(fileName != null && !fileName.trim().equals("")) {
-				
+					
+					String zipLocationTempFile = rawDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0]+"_tmp101"+"."+fileName.split("\\.")[1];
+					String zipLocation = rawDirUser.getAbsolutePath()+File.separator+fileName;
+					String extractLocation = extractDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0];
+					
+					//String extractLocation = extractDirUser.getAbsolutePath();				
 					/*
 					 * Download / Create the ZIP file in "RawFiles" folder
 					 */
 					//System.out.println("FileName: "+fileSaveDir.getAbsolutePath()+File.separator+fileName);
-					filePart.write(rawDirUser.getAbsolutePath()+File.separator+fileName);
+					//filePart.write(rawDirUser.getAbsolutePath()+File.separator+fileName);					
+					filePart.write(zipLocationTempFile);
 					
-					String zipLocation = rawDirUser.getAbsolutePath()+File.separator+fileName;
-					//String extractLocation = extractDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0];
-					String extractLocation = extractDirUser.getAbsolutePath();
 					
-					folder_desc_state = checkFolderDescription(zipLocation, AssignmentName);
+					folder_desc_state = checkFolderDescription(zipLocationTempFile, AssignmentName);
 					System.out.println("state : "+folder_desc_state);
 					if(folder_desc_state){
 						
 					/*
 					 * Extract the contents of the ZIP file and place it in "ExtractedFiles" folder under the foldername of the ZipFile
 					 */
+						
+						
+						//Version Control
+						DBManager dbm = new DBManager();
+						int count = dbm.getVersionCount(sess.getAttribute("loggeduser").toString(), AssignmentName);
+						if(count > 0) {
+							//rename old recent folder here	with version
+							String folderLocation = extractDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0];
+							String toFolderLocation = extractDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0]+"_V"+count;
+							//File dir = new File(folderLocation);
+							//File toDir = new File(toFolderLocation);
+							System.out.println("Renaming Directory -103");
+							//renameDirectory(dir,toDir);
+							copyDirectoryToNewDirectory(folderLocation, toFolderLocation);
+							//copyFileToNewFile(folderLocation, toFolderLocation);
+							System.out.println("Done Directory -103");
+							//rename old recent zipfile here with version
+							//File zipDir = new File(zipLocation);
+							System.out.println("Renaming Zip Version -104");
+							//renameZip(zipDir, rawDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0]+"_V"+count+"."+fileName.split("\\.")[1]);
+							copyFileToNewFile(zipLocation, rawDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0]+"_V"+count+"."+fileName.split("\\.")[1]);
+							System.out.println("Done Zip Version -104");
+							dbm.updateVersion(sess.getAttribute("loggeduser").toString(), AssignmentName, fileName.split("\\.")[0], fileName.split("\\.")[0]+"_V"+count);
+							System.out.println("COUNT : "+count);
+						}							
+						//Version Control
 					
-								
+						System.out.println("Renaming from tempfile to actual filename -101");
+						//File zipDir0 = new File(zipLocationTempFile);
+						//System.out.println("ZipDir0: "+zipDir0.exists()+" || "+zipDir0.canWrite());
+						copyFileToNewFile(zipLocationTempFile, zipLocation);		
+						//renameZip(new File(zipLocationTempFile), zipLocation);
+						System.out.println("Done -101");
+						
 					//ArrayList<String> results = unzip(zipLocation, extractLocation);
 					unzip(zipLocation, extractLocation);
+					
+					String testcaseFile = dbm.getTestCaseFileName(AssignmentName);
+					//Copy TestCase file for the assignment to extractLocation
+					copyTestCase(rawTestPath+File.separator+testcaseFile, extractLocation+File.separator+testcaseFile);
 					
 					/*if(results != null){
 						DBManager dbm = new DBManager();
@@ -161,7 +209,7 @@ public class AssignmentHandler extends HttpServlet {
 						System.out.println("Fail");
 					}*/
 					
-					DBManager dbm = new DBManager();
+					
 					//System.out.println(dbm.checkFileExists(fileName.split("\\.")[0], AssignmentName, sess.getAttribute("loggeduser").toString()));
 					if(!dbm.checkFileExists(fileName.split("\\.")[0], AssignmentName, sess.getAttribute("loggeduser").toString())){
 						dbm.insertUserDetails(sess.getAttribute("loggeduser").toString(), AssignmentName, fileName.split("\\.")[0], "VERIFYING", "");
@@ -170,7 +218,7 @@ public class AssignmentHandler extends HttpServlet {
 					}
 				} else {
 					System.out.println("Deleting......");
-					File fremove = new File(zipLocation);
+					File fremove = new File(zipLocationTempFile);
 					System.out.println(fremove.getAbsolutePath());
 					System.out.println(fremove.delete());					
 				}
@@ -203,11 +251,11 @@ public class AssignmentHandler extends HttpServlet {
 				sess.setAttribute("flashmsg","Zip-file content mis-match");
 			}
 			response.sendRedirect("SubmissionPage.jsp");
+			pout.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		
+		} 
 		
 	}
 	
@@ -232,10 +280,10 @@ public class AssignmentHandler extends HttpServlet {
 	 * @throws IOException
 	 */
 	public void unzip(String zipFilePath, String destDirectory) throws IOException {
-        /*File destDir = new File(destDirectory);
+        File destDir = new File(destDirectory);
         if (!destDir.exists()) {
             destDir.mkdir();
-        }*/
+        }
         ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFilePath));
         ZipEntry entry = zipIn.getNextEntry();
         // iterates over entries in the zip file
@@ -308,11 +356,13 @@ public class AssignmentHandler extends HttpServlet {
 	       while (entry != null) {	          
 	           if (!entry.isDirectory()) {
 	           	if(!fileNames.contains(entry.getName())){
+	           		zipIn.closeEntry();
 	           		zipIn.close();
 	           		return false;	     
 	           	}
 	           } else {	        	   
 	           	if(!folderNames.contains(entry.getName())){
+	           		zipIn.closeEntry();
 	           		zipIn.close();
 	           		return false;
 	           	}
@@ -322,6 +372,68 @@ public class AssignmentHandler extends HttpServlet {
 	       }
 	    zipIn.close();
 		return true;
+	}
+    
+    private void renameDirectory(File dir, File toDir) {
+		// TODO Auto-generated method stub
+    	System.out.println("isDirectory: "+dir.isDirectory() + "||"+ dir.getAbsolutePath()+" || "+toDir.getAbsolutePath());
+		if(dir.isDirectory()) {
+			System.out.println("renameDirectory: "+dir.renameTo(toDir));
+		}
+	}
+    
+	private void renameZip(File oldName, String newName){
+		boolean state = oldName.renameTo(new File(newName));
+		System.out.println("renameZip: "+state+" || "+oldName.getAbsolutePath()+" || "+newName);
+	}
+	
+	private void copyFileToNewFile(String origin, String destination){
+		System.out.println("origin: "+origin+" || dest: "+destination);
+		File fin = new File(origin);
+		File fout = new File(destination);
+		
+		try {
+			FileUtils.copyFile(fin, fout);
+			System.out.println("Filecopied");
+			boolean flag = FileUtils.deleteQuietly(fin);
+			System.out.println("File deleted: "+flag);
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+	
+	private void copyTestCase(String origin, String destination){
+		File fin = new File(origin);
+		File fout = new File(destination);
+		
+		try {
+			FileUtils.copyFile(fin, fout);
+			System.out.println("TestCase File copied");
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private void copyDirectoryToNewDirectory(String origin, String destination){
+		System.out.println("origin: "+origin+" || dest: "+destination);
+		File fin = new File(origin);
+		File fout = new File(destination);
+		
+		try {
+			FileUtils.copyDirectory(fin, fout);
+			System.out.println("Directory Copied");
+			FileUtils.deleteDirectory(fin);
+			System.out.println("Folder deleted: ");
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 }

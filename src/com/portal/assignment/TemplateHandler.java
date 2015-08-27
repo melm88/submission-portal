@@ -51,8 +51,8 @@ public class TemplateHandler extends HttpServlet {
 	}
 	
 	protected void processTemplate(HttpServletRequest request, HttpServletResponse response) {
-		Part filePart;
-		String fileName = "";
+		Part filePart, filePartTest;
+		String fileName = "", testFilename = "";
 		DBManager dbm = new DBManager();
 		
 		HttpSession sess = request.getSession(false);
@@ -90,14 +90,31 @@ public class TemplateHandler extends HttpServlet {
 		if(!rawDir.exists())
 			rawDir.mkdir();
 		
+		//Create BASE folder "AssignmentTemplate"does not exist.
+		String testPath = File.separator+"tmp"+File.separator+"AssignmentTestCases";
+		File testDir = new File(testPath);
+		if(!testDir.exists())
+			testDir.mkdir();
+		
+		//Create sub-folder with AssignmentName under BASE folder
+		String rawTestPath = File.separator+"tmp"+File.separator+"AssignmentTestCases"+File.separator+AssignmentName;
+		File rawTestDir = new File(rawTestPath);
+		if(!rawTestDir.exists())
+			rawTestDir.mkdir();
+		
 		try {
 			filePart = request.getPart("file-0a");
 			fileName = getFileName(filePart).replaceAll("\\s+", "_");
 			
-			if(fileName != null && !fileName.trim().equals("")) {
+			filePartTest = request.getPart("file-0b");
+			testFilename = getFileName(filePartTest).replaceAll("\\s+", "_");
+			
+			if(fileName != null && !fileName.trim().equals("") && testFilename != null && !testFilename.trim().equals("")) {
 				
 				//Write File to SubmissionTemplate folder
 				filePart.write(rawDir.getAbsolutePath()+File.separator+fileName);
+				//Write File to AssignmentTestCase folder
+				filePartTest.write(rawTestDir.getAbsolutePath()+File.separator+testFilename);
 				
 				ArrayList<ArrayList<String>> contentlist = zipContents(rawDir.getAbsolutePath()+File.separator+fileName);
 				if(contentlist.size()>0){
@@ -108,10 +125,10 @@ public class TemplateHandler extends HttpServlet {
 					System.out.println(FileList.toString());
 					
 					if(!assignment_state){
-						dbm.insertSubmissionTemplate(AssignmentName, fileName, FolderList.toString(), FileList.toString());
+						dbm.insertSubmissionTemplate(AssignmentName, fileName, testFilename, FolderList.toString(), FileList.toString());
 						System.out.println("Inserted Template to DB");
 					} else {
-						dbm.updateSubmissionTemplate(AssignmentName, fileName, FolderList.toString(), FileList.toString());
+						dbm.updateSubmissionTemplate(AssignmentName, fileName, testFilename, FolderList.toString(), FileList.toString());
 						System.out.println("Updated Template in DB");
 					}
 				}
@@ -139,7 +156,7 @@ public class TemplateHandler extends HttpServlet {
 	 * Extracts the FileName (Part)
 	 */
 	private static String getFileName(Part part) {
-		System.out.println("Header: "+part.getHeaderNames());
+		//System.out.println("Header: "+part.getHeaderNames());
 		for (String cd : part.getHeader("content-disposition").split(";")) {
 			if (cd.trim().startsWith("filename")) {
 				String fileName = cd.substring(cd.indexOf('=') + 1).trim().replace("\"", "");

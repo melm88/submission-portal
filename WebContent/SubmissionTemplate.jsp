@@ -20,6 +20,9 @@
 <body>
 	<%if(session.getAttribute("loggedusername") == null || session.getAttribute("loggeduser") == null){
 		response.sendRedirect("index.jsp");
+	} else {
+	if(!session.getAttribute("loggeduser").equals("pg@taramt.com") && !session.getAttribute("loggeduser").equals("melvin.m@taramt.com")){
+		response.sendRedirect("SubmissionPage.jsp");
 	}%>
 	<nav class="navbar navbar-default">
 		<div class="container-fluid">
@@ -42,7 +45,7 @@
 					<li class="active"><a href="#">Link <span class="sr-only">(current)</span></a></li>
 					<li><a href="#">Link</a></li>
 				</ul> -->
-				<ul class="nav navbar-nav navbar-right">
+				<ul class="nav navbar-nav navbar-right">					
 					<li><a href="SubmissionPage.jsp">Submit Assignment</a></li>						
 					<li class="dropdown"><a href="#" class="dropdown-toggle"
 						data-toggle="dropdown" role="button" aria-haspopup="true"
@@ -74,10 +77,16 @@
 					<br/>
 					<div class="input input-group-lg">
 						<input id="file-0a" name="file-0a" class="file" type="file"
-							accept="application/zip">
+							accept="application/zip" required>
+					</div>
+					<br/><br/>
+					<div class="input input-group-lg">
+						<input id="file-0b" name="file-0b" class="file" type="file"
+							accept="application/java-vm">
 					</div>
 				</fieldset>
 			</form>
+			<br/><br/>
 		</div>
 		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-1"></div>
 	</div>
@@ -101,7 +110,7 @@
 	    	uploadClass: "btn btn-success",
 	        minFileCount: 1,
 	        maxFileCount: 1,
-	        showUpload: true,		        
+	        showUpload: false,		        
 	        slugCallback: function(filename) {		        	
 	            return filename.replace('(', '_').replace(']', '_');
 	        }		       
@@ -109,6 +118,25 @@
 	    });	    
 	</script>
 	
-
+	<script>
+		$("#file-0b").fileinput({
+	    	allowedFileExtensions : ['class'],
+	    	browseClass: "btn btn-info",
+	    	browseLabel: "Browse",
+	    	browseIcon: '<i class="glyphicon glyphicon-folder-open"></i> ',
+	    	removeClass: "btn btn-danger",
+	    	uploadClass: "btn btn-success",
+	        minFileCount: 1,
+	        maxFileCount: 1,
+	        showUpload: true,
+	        showPreview: false,
+	        slugCallback: function(filename) {		        	
+	            return filename.replace('(', '_').replace(']', '_');
+	        }		       
+	        
+	    });	    
+	</script>
+	
+	<%} %>
 </body>
 </html>

@@ -23,7 +23,7 @@ public class Evaluator {
 		return arr;
 	}
 	
-	public void processCode(String directoryPATH){
+	public void processCode(String directoryPATH, String testFile){
 		
 		//POJO object
 		//String directoryPATH = File.separator+"tmp"+File.separator+"AssignmentSubmissions"+File.separator+"ExtractedFiles"+File.separator;
@@ -33,23 +33,31 @@ public class Evaluator {
 		try {
             
 			//Compile All Java code
-			int compileOP = 0;
-            //int compileOP = runProcess("javac "+directoryPATH + File.separator + "*.java", cob);
+			//int compileOP = 0;
+			String compile_command = "javac "+directoryPATH+File.separator+"*.java";
+			System.out.println("Compile: "+compile_command);
+            int compileOP = runProcess("javac "+directoryPATH+File.separator+"*.java", cob);
             //If EQUALS 0 then successful compilation
             //Run the test file (java)
+            
             if(compileOP == 0){
-            	//runProcess("java -cp "+directoryPATH+" ShoppingCartTest", cob);
+            	
+            	String run_command = "java -cp "+directoryPATH+" "+testFile.split("\\.")[0];
+            	System.out.println("RUN: "+run_command);
+            	
+            	runProcess("java -cp "+directoryPATH+" "+testFile.split("\\.")[0], cob);
             	//out.println("Output: "+cob.outputMSG);     
-            	//System.out.println("OUTPUT: "+cob.outputMSG);
-            	//System.out.println("ExitCode: "+cob.exitCode);
-            	//System.out.println("Error: "+cob.errorMSG);
-            	//System.out.println("Wrote JSON SUCCESS state");
+            	System.out.println("OUTPUT: "+cob.outputMSG);
+            	System.out.println("ExitCode: "+cob.exitCode);
+            	System.out.println("Error: "+cob.errorMSG);
+            	System.out.println("Wrote JSON SUCCESS state");
             }
             else {		            	
             	//out.println("Error: "+cob.errorMSG);
-            	//System.out.println(cob.errorMSG);
-            	//System.out.println(cob.exitCode);
-            	//System.out.println("Wrote JSON FAIL state");
+            	System.out.println(cob.errorMSG);
+            	System.out.println(cob.exitCode);
+            	System.out.println("Wrote JSON FAIL state");
+            	
             }	            
                    
             //Get .class File
@@ -106,6 +114,6 @@ class CodeObject {
 	public CodeObject(){
 		errorMSG = "";
 		outputMSG = "";
-		exitCode = 0; // MAKE IT -1 (when doing adding evaluation logic.
+		exitCode = -1; // MAKE IT -1 (when doing adding evaluation logic.
 	}		
 }
