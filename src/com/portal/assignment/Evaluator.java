@@ -36,7 +36,10 @@ public class Evaluator {
 			//int compileOP = 0;
 			String compile_command = "javac "+directoryPATH+File.separator+"*.java";
 			System.out.println("Compile: "+compile_command);
-            int compileOP = runProcess("javac "+directoryPATH+File.separator+"*.java", cob);
+			
+			int compileOP = runProcess("sudo javac -cp "+directoryPATH+" "+directoryPATH+File.separator+testFile, cob);
+			
+            //int compileOP = runProcess("javac "+directoryPATH+File.separator+"*.java", cob);
             //If EQUALS 0 then successful compilation
             //Run the test file (java)
             

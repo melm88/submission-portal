@@ -51,8 +51,8 @@ public class TemplateHandler extends HttpServlet {
 	}
 	
 	protected void processTemplate(HttpServletRequest request, HttpServletResponse response) {
-		Part filePart, filePartTest;
-		String fileName = "", testFilename = "";
+		Part filePart, filePartTest, filePartQuestion;
+		String fileName = "", testFilename = "", questionFilename = "";
 		DBManager dbm = new DBManager();
 		
 		HttpSession sess = request.getSession(false);
@@ -102,6 +102,19 @@ public class TemplateHandler extends HttpServlet {
 		if(!rawTestDir.exists())
 			rawTestDir.mkdir();
 		
+		//Create BASE folder "AssignmentTemplate"does not exist.
+		String questionPath = File.separator+"tmp"+File.separator+"QuestionsPortal";
+		File qDir = new File(questionPath);
+		if(!qDir.exists())
+			qDir.mkdir();
+		
+		//Create sub-folder with AssignmentName under BASE folder
+		String rawQuestionPath = File.separator+"tmp"+File.separator+"QuestionsPortal"+File.separator+AssignmentName;
+		File rawQDir = new File(rawQuestionPath);
+		if(!rawQDir.exists())
+			rawQDir.mkdir();
+		
+		
 		try {
 			filePart = request.getPart("file-0a");
 			fileName = getFileName(filePart).replaceAll("\\s+", "_");
@@ -109,12 +122,17 @@ public class TemplateHandler extends HttpServlet {
 			filePartTest = request.getPart("file-0b");
 			testFilename = getFileName(filePartTest).replaceAll("\\s+", "_");
 			
-			if(fileName != null && !fileName.trim().equals("") && testFilename != null && !testFilename.trim().equals("")) {
+			filePartQuestion = request.getPart("file-0c");
+			questionFilename = getFileName(filePartQuestion).replaceAll("\\s+", "_");
+			
+			if(fileName != null && !fileName.trim().equals("") && testFilename != null && !testFilename.trim().equals("") && questionFilename != null && !questionFilename.trim().equals("")) {
 				
 				//Write File to SubmissionTemplate folder
 				filePart.write(rawDir.getAbsolutePath()+File.separator+fileName);
 				//Write File to AssignmentTestCase folder
 				filePartTest.write(rawTestDir.getAbsolutePath()+File.separator+testFilename);
+				//Write File to QuestionFolder
+				filePartQuestion.write(rawQDir.getAbsolutePath()+File.separator+questionFilename);
 				
 				ArrayList<ArrayList<String>> contentlist = zipContents(rawDir.getAbsolutePath()+File.separator+fileName);
 				if(contentlist.size()>0){
@@ -125,15 +143,14 @@ public class TemplateHandler extends HttpServlet {
 					System.out.println(FileList.toString());
 					
 					if(!assignment_state){
-						dbm.insertSubmissionTemplate(AssignmentName, fileName, testFilename, FolderList.toString(), FileList.toString());
+						dbm.insertSubmissionTemplate(AssignmentName, fileName, testFilename, FolderList.toString(), FileList.toString(), questionFilename);
 						System.out.println("Inserted Template to DB");
 					} else {
-						dbm.updateSubmissionTemplate(AssignmentName, fileName, testFilename, FolderList.toString(), FileList.toString());
+						dbm.updateSubmissionTemplate(AssignmentName, fileName, testFilename, FolderList.toString(), FileList.toString(), questionFilename);
 						System.out.println("Updated Template in DB");
 					}
 				}
-				
-				
+								
 			}			
 			
 		} catch (IllegalStateException | IOException | ServletException e) {

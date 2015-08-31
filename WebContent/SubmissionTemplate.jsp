@@ -65,8 +65,8 @@
 	
 	
 	<div class="container">
-		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-1"></div>
-		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-10">
+		<div class="col-lg-3 col-md-3 col-sm-2 col-xs-1"></div>
+		<div class="col-lg-6 col-md-6 col-sm-8 col-xs-10">
 			<form id="modalform" class="contact" action="TemplateHandler"
 				method="post" enctype="multipart/form-data" role="form">
 				<fieldset>
@@ -76,19 +76,27 @@
 					</div>
 					<br/>
 					<div class="input input-group-lg">
+						<label for="file-0c">Question File (zip)</label>
+						<input id="file-0c" name="file-0c" class="file" type="file"
+							accept="application/zip" required>
+					</div>
+					<br/>
+					<div class="input input-group-lg">
+						<label for="file-0a">Submission Structure</label>
 						<input id="file-0a" name="file-0a" class="file" type="file"
 							accept="application/zip" required>
 					</div>
-					<br/><br/>
+					<br/>
 					<div class="input input-group-lg">
+						<label for="file-0b">Test Case (.java file)</label>
 						<input id="file-0b" name="file-0b" class="file" type="file"
-							accept="application/java-vm">
+							accept="text/x-java-source">
 					</div>
 				</fieldset>
 			</form>
 			<br/><br/>
 		</div>
-		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-1"></div>
+		<div class="col-lg-3 col-md-3 col-sm-2 col-xs-1"></div>
 	</div>
 	
 	
@@ -101,6 +109,25 @@
 	<script src="js/bootstrap.min.js"></script>
 	
 	<script>
+		$("#file-0c").fileinput({
+	    	allowedFileExtensions : ['zip'],
+	    	browseClass: "btn btn-info",
+	    	browseLabel: "Browse",
+	    	browseIcon: '<i class="glyphicon glyphicon-folder-open"></i> ',
+	    	removeClass: "btn btn-danger",
+	    	uploadClass: "btn btn-success",
+	        minFileCount: 1,
+	        maxFileCount: 1,
+	        showUpload: false,
+	        showPreview: false,
+	        slugCallback: function(filename) {		        	
+	            return filename.replace('(', '_').replace(']', '_');
+	        }		       
+	        
+	    });	    
+	</script>
+	
+	<script>
 		$("#file-0a").fileinput({
 	    	allowedFileExtensions : ['zip'],
 	    	browseClass: "btn btn-info",
@@ -110,7 +137,8 @@
 	    	uploadClass: "btn btn-success",
 	        minFileCount: 1,
 	        maxFileCount: 1,
-	        showUpload: false,		        
+	        showUpload: false,
+	        showPreview: false,
 	        slugCallback: function(filename) {		        	
 	            return filename.replace('(', '_').replace(']', '_');
 	        }		       
@@ -120,7 +148,7 @@
 	
 	<script>
 		$("#file-0b").fileinput({
-	    	allowedFileExtensions : ['class'],
+	    	allowedFileExtensions : ['java'],
 	    	browseClass: "btn btn-info",
 	    	browseLabel: "Browse",
 	    	browseIcon: '<i class="glyphicon glyphicon-folder-open"></i> ',

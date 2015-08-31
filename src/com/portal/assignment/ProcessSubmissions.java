@@ -68,9 +68,9 @@ public class ProcessSubmissions extends HttpServlet {
 					JSONObject jobj = (JSONObject) JSONValue.parse(output);
 					System.out.println(jobj.toString());
 					if(temp.get(0).equals("0")){
-						dbm.updateProcessedScoreFeedback(emailid, assignmentname, filename, "PASS", jobj.get("summary").toString(), jobj.get("score").toString());
+						dbm.updateProcessedScoreFeedback(emailid, assignmentname, filename, "SUCCESS", jobj.get("summary").toString(), jobj.get("score").toString());
 					} else {
-						dbm.updateProcessedScoreFeedback(emailid, assignmentname, filename, "FAIL", jobj.get("summary").toString(), jobj.get("score").toString());
+						dbm.updateProcessedScoreFeedback(emailid, assignmentname, filename, "ERROR", jobj.get("summary").toString(), jobj.get("score").toString());
 					}
 					
 				}				

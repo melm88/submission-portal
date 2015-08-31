@@ -64,14 +64,24 @@
 
 
 	<div class="container">
-		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-1"></div>
-		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-10">
+		<div class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
+			<div id="portalquestion">
+				<div class="panel panel-success">
+					  <div class="panel-heading">
+					    <h3 class="panel-title">Question File</h3>
+					  </div>
+					  <div id="questionbody" class="panel-body">					    
+					  </div>
+				</div>
+			</div>
+		</div>
+		<div class="col-lg-7 col-md-7 col-sm-12 col-xs-12">
 			
 			<div id="submissiondropdown">
 				<div class="form-horizontal">
 					<div class="form-group">
-						<label for="assignmentselection" class="col-sm-2 control-label">Assignment: </label>
-						<div id="myselector" class="col-sm-10">
+						<label for="assignmentselection" class="col-lg-3 control-label">Assignment: </label>
+						<div id="myselector" class="col-lg-9">
 							<select id="assignmentselection" name="assignmentselection" class="form-control">
 								<option value="choose">No Assignments Created</option>															
 							</select>
@@ -86,7 +96,7 @@
 				    <h3 class="panel-title">Submission File - Structure</h3>
 				  </div>
 				  <div id="structurebody" class="panel-body">
-				    Panel content
+				    
 				  </div>
 				</div>
 			</div>
@@ -115,7 +125,7 @@
 			</div>
 			<input type="hidden" id="loggeduser" name="loggeduser" value='<%=session.getAttribute("loggeduser")%>'>
 		</div>
-		<div class="col-lg-3 col-md-3 col-sm-3 col-xs-1"><%if(session.getAttribute("flashmsg")!=null){ %><span id="flashmsg"><%=session.getAttribute("flashmsg") %></span><% session.removeAttribute("flashmsg"); }%></div>
+		<div class="col-lg-2 col-md-2 col-sm-12 col-xs-12"><%if(session.getAttribute("flashmsg")!=null){ %><span id="flashmsg"><%=session.getAttribute("flashmsg") %></span><% session.removeAttribute("flashmsg"); }%></div>
 	</div>	
 
 
@@ -127,6 +137,7 @@
 	
 	<script>
 		$(document).ready(function(){
+			$('#portalquestion').hide();
 			$('#submissionstructure').hide();
 			$('#submissiondiv').hide();
 			$('#submissionresult').hide();			
@@ -151,10 +162,19 @@
 				$('#assignmentselection').on('change', function(e){
 					var value = this.value;
 					if(value != "choose"){
+						$('#portalquestion').show();
 						$('#submissionstructure').show();
 						$('#submissiondiv').show();
 						$('#selectedattribute').val(value);
 						$('#submissionresult').show();
+						$.post('QuestionGenerator', {selector: $('#assignmentselection').val()}, function(data){
+							//alert(data);							
+							if(data.trim() != ""){								
+								//var output = '<a href="DownloadQuestion?ques='+data+'&assgn='+$('#assignmentselection').val()+'"> Download Question File </a>';
+								var output = '<a href="DownloadQuestion?'+$.param({ques:data, assgn: $('#assignmentselection').val()})+'"> Download Question File </a>';
+								$('#questionbody').html(output);
+							}								
+						});
 						$.post('AjaxGetTemplate', {selector: $('#assignmentselection').val()}, function(data){
 							//alert(data);
 							if(data != "fail"){				
@@ -181,6 +201,8 @@
 									output = output.substring(0, output.lastIndexOf(",")) + "<br/>";
 								}
 								output = output + "&nbsp;&nbsp;" + single_files.substring(0, single_files.lastIndexOf(","));
+								output = output + "<br/><b>Note:</b><br/>" + "1. Zip file name should be the AssignmentName (eg: CourseManagement.zip)";
+								output = output + "<br/>" + "2. Zip file should contain ONLY .java file";
 								//alert(output);
 								$('#structurebody').html(output);
 							}								
@@ -192,7 +214,13 @@
 								var counts = 0;
 								for(ele in jsonarr){					
 									temp = jsonarr[ele];
-									tablecode = tablecode + "<tr><td>"+temp["filename"]+"</td><td>"+temp["status"]+"</td><td>"+temp["score"]+"</td><td>"+temp["timestamp"]+"</td></tr>";
+									tablecode = tablecode + "<tr><td>"+temp["filename"]+"</td><td>";
+									if(temp["status"].trim()!="VERIFYING"){
+										tablecode = tablecode + '<a href="ViewExecutionResult?'+ $.param({file: temp["filename"], assgn: $('#assignmentselection').val()})+ '">' + temp["status"] +"</a></td><td>"+temp["score"]+"</td><td>"+temp["timestamp"]+"</td></tr>";
+									} else {
+										tablecode = tablecode + temp["status"]+"</td><td>"+temp["score"]+"</td><td>"+temp["timestamp"]+"</td></tr>";
+									}
+									
 									counts = counts+1;
 								}
 								tablecode = tablecode+"</table>";
@@ -202,6 +230,7 @@
 							}								
 						});
 					} else {
+						$('#portalquestion').hide();
 						$('#selectedattribute').val("");
 						$('#submissionstructure').hide();
 						$('#submissiondiv').hide();
