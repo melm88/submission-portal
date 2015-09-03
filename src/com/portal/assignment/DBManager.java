@@ -372,6 +372,79 @@ public class DBManager {
 	        return null;
 	 }
 	 
+	 public JSONObject getAllMissions(){
+		 	Connection conn = openConnection();
+	    	PreparedStatement stmt = null;
+	    	// Execute SQL query
+	        try {
+	        	String sql = "SELECT mid, title FROM MISSION ORDER BY title";
+				stmt = conn.prepareStatement(sql);
+				//stmt.setString(1, assignment);			
+				ResultSet rs = stmt.executeQuery();
+				//System.out.println("InsertUserDetails state: "+state+" | "+name+","+pwd+","+role+church);
+				if(rs!=null){
+					JSONObject jObj = new JSONObject();
+					JSONArray titles = new JSONArray();
+					JSONArray mid = new JSONArray();
+					while(rs.next()){
+						mid.add(rs.getString(1));
+						titles.add(rs.getString(2));
+					}
+					System.out.println(mid.toString());
+					System.out.println(titles.toString());
+					jObj.put("mid", mid);
+					jObj.put("titles", titles);
+					return jObj;
+				}				
+				
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} finally {
+				try {
+					stmt.close();
+					closeConnection(conn);
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+	        return null;
+	 }
+	 
+	 public int getSubtaskCount(int mission){
+		 	Connection conn = openConnection();
+	    	PreparedStatement stmt = null;
+	    	// Execute SQL query
+	        try {
+	        	String sql = "SELECT count(sid) FROM SUBTASK WHERE missionid=?";
+				stmt = conn.prepareStatement(sql);
+				stmt.setInt(1, mission);
+				//stmt.setString(1, assignment);			
+				ResultSet rs = stmt.executeQuery();
+				//System.out.println("InsertUserDetails state: "+state+" | "+name+","+pwd+","+role+church);
+				if(rs!=null){
+					while(rs.next()){
+						return rs.getInt(1);
+					}
+					return -1;
+				}				
+				
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} finally {
+				try {
+					stmt.close();
+					closeConnection(conn);
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+	        return -1;
+	 }
+	 
 	 public boolean checkFileExists(String filename, String assignment, String emailid){
 		 Connection conn = openConnection();
 	    PreparedStatement stmt = null;
@@ -744,6 +817,66 @@ public class DBManager {
 			}
 	        return null;
 		 }
+	 
+	 public void insertMissionDetails(String title, String description, String assignmentname) {
+	    	Connection conn = openConnection();
+	    	PreparedStatement stmt = null;
+	    	// Execute SQL query
+	        try {
+	        	String sql = "INSERT INTO MISSION (title, description, assignmentname, createdon) VALUES (?,?,?,?)";
+				stmt = conn.prepareStatement(sql);
+				stmt.setString(1, title);
+				stmt.setString(2, description);
+				stmt.setString(3, assignmentname);
+				stmt.setString(4, getDBTimestamp());				
+				//stmt.setTimestamp(5, "");
+				int state = stmt.executeUpdate();
+				//System.out.println("InsertUserDetails state: "+state+" | "+name+","+pwd+","+role+church);
+				
+				
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} finally {
+				try {
+					stmt.close();
+					closeConnection(conn);
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}	
+	}
+	 
+	 public void insertSubtaskDetails(String description, int missionid, String assignmentname) {
+	    	Connection conn = openConnection();
+	    	PreparedStatement stmt = null;
+	    	// Execute SQL query
+	        try {
+	        	String sql = "INSERT INTO SUBTASK (description, missionid, assignmentname, createdon) VALUES (?,?,?,?)";
+				stmt = conn.prepareStatement(sql);
+				stmt.setString(1, description);
+				stmt.setInt(2, missionid);
+				stmt.setString(3, assignmentname);
+				stmt.setString(4, getDBTimestamp());				
+				//stmt.setTimestamp(5, "");
+				int state = stmt.executeUpdate();
+				//System.out.println("InsertUserDetails state: "+state+" | "+name+","+pwd+","+role+church);
+				
+				
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} finally {
+				try {
+					stmt.close();
+					closeConnection(conn);
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}	
+	}
 
 
 }
