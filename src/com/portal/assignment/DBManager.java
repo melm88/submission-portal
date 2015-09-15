@@ -23,7 +23,7 @@ public class DBManager {
     
     //  Database credentials
     static final String USER = "root";
-    static final String PASS = "mel123";
+    static final String PASS = "root";
 	
 	public DBManager(){
 		
@@ -877,6 +877,49 @@ public class DBManager {
 				}
 			}	
 	}
+	 
+	 public JSONObject getSubmissionsForAnAssignment(String assignment){
+		 	Connection conn = openConnection();
+	    	PreparedStatement stmt = null;
+	    	// Execute SQL query
+	        try {
+	        	String sql = "SELECT * FROM ASSIGNMENTS WHERE assignmentname=?";
+				stmt = conn.prepareStatement(sql);
+				stmt.setString(1, assignment);			
+				ResultSet rs = stmt.executeQuery();
+				//System.out.println("InsertUserDetails state: "+state+" | "+name+","+pwd+","+role+church);
+				if(rs!=null){
+					JSONObject jObj = new JSONObject();
+					JSONArray jarr = new JSONArray();
+					while(rs.next()){
+						JSONArray temp = new JSONArray();
+						temp.add(rs.getString(1));
+						temp.add(rs.getString(3));
+						temp.add(rs.getString(4));
+						temp.add(rs.getString(5));
+						temp.add(rs.getString(6));
+						temp.add(rs.getString(7));
+						temp.add(rs.getString(8));						
+						jarr.add(temp);
+					}					
+					jObj.put("data", jarr);
+					return jObj;
+				}				
+				
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} finally {
+				try {
+					stmt.close();
+					closeConnection(conn);
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+	        return null;
+	 }
 
 
 }

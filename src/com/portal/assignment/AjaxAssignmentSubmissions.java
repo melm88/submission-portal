@@ -13,16 +13,16 @@ import javax.servlet.http.HttpSession;
 import org.json.simple.JSONObject;
 
 /**
- * Servlet implementation class GetAssignments
+ * Servlet implementation class AjaxAssignmentSubmissions
  */
-@WebServlet("/GetAssignments")
-public class GetAssignments extends HttpServlet {
+@WebServlet("/AjaxAssignmentSubmissions")
+public class AjaxAssignmentSubmissions extends HttpServlet {
 	private static final long serialVersionUID = 1L;
        
     /**
      * @see HttpServlet#HttpServlet()
      */
-    public GetAssignments() {
+    public AjaxAssignmentSubmissions() {
         super();
         // TODO Auto-generated constructor stub
     }
@@ -39,14 +39,9 @@ public class GetAssignments extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
-		processAssignmentNames(request, response);
-	}
-	
-	protected void processAssignmentNames(HttpServletRequest request, HttpServletResponse response) throws IOException{
-		
-		/*HttpSession sess = request.getSession(false);
+		HttpSession sess = request.getSession(false);
 		if(sess == null || sess.getAttribute("loggeduser") == null)
-			response.sendRedirect("index.jsp");*/
+			response.sendRedirect("index.jsp");
 		
 		
 		response.setContentType("application/json");
@@ -54,16 +49,22 @@ public class GetAssignments extends HttpServlet {
 		response.setHeader("Access-Control-Allow-Methods", "POST, GET");
 		response.setHeader("Access-Control-Max-Age", "3600");
 		
-		DBManager dbm = new DBManager();
-		JSONObject jobj = dbm.getAllAssignments();
-		PrintWriter out = response.getWriter();
 		
-		if(jobj != null){
-			//System.out.println("jres: "+jres.toString());
-			out.write(jobj.toJSONString());
+		String assignment = request.getParameter("assgn");
+		PrintWriter out = response.getWriter();
+		if(assignment != null){
+			DBManager dbm = new DBManager();
+			JSONObject jobj = dbm.getSubmissionsForAnAssignment(assignment);
+			
+			if(jobj != null){			
+				out.write(jobj.toJSONString());				
+			} else {
+				out.write("fail");
+			}
+			
 		} else {
 			out.write("fail");
-		}		
+		}
 		out.flush();
 		out.close();
 	}

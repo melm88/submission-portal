@@ -18,9 +18,6 @@
 	type="text/css" />
 </head>
 <body>
-	<%if(session.getAttribute("loggedusername") == null || session.getAttribute("loggeduser") == null){
-		response.sendRedirect("index.jsp");
-	} else {%>
 	<nav class="navbar navbar-default">
 		<div class="container-fluid">
 			<!-- Brand and toggle get grouped for better mobile display -->
@@ -43,13 +40,10 @@
 					<li><a href="#">Link</a></li>
 				</ul> -->
 				<ul class="nav navbar-nav navbar-right">
-					<%if(session.getAttribute("loggeduser").equals("pg@taramt.com") || session.getAttribute("loggeduser").equals("melvin.m@taramt.com")){%>
-						<li><a href="SubmissionTemplate.jsp">Submission Template</a></li>
-						<li><a href="SubmissionsLog.jsp">Submissions</a></li>
-					<%} %>															
+																				
 					<li class="dropdown"><a href="#" class="dropdown-toggle"
 						data-toggle="dropdown" role="button" aria-haspopup="true"
-						aria-expanded="false"> <%=session.getAttribute("loggedusername") %> <span class="caret"></span></a>
+						aria-expanded="false"> ABC <span class="caret"></span></a>
 						<ul class="dropdown-menu">							
 							<!-- <li><a href="#">..</a></li> -->
 							<li><a href="AjaxLogout">Logout</a></li>
@@ -103,7 +97,7 @@
 			</div>
 			
 			<div id="submissiondiv">
-				<form id="modalform" class="contact" action="AssignmentHandler"
+				<form id="modalform" class="contact" action="AssignmentTestHandler"
 					method="post" enctype="multipart/form-data" role="form">
 					<fieldset>
 						<br />
@@ -124,29 +118,18 @@
 					</blockquote>	
 				</div>
 			</div>
-			<input type="hidden" id="loggeduser" name="loggeduser" value='<%=session.getAttribute("loggeduser")%>'>
+			<input type="hidden" id="loggeduser" name="loggeduser" value="melvin.m@taramt.com">
 		</div>
 		<div class="col-lg-3 col-md-3 col-sm-12 col-xs-12">
 			<%if(session.getAttribute("flashmsg") != null) {%>
-				<%if(!session.getAttribute("flashmsg").equals("Success")) {%>
-					<div class="panel panel-danger">
-						<div class="panel-heading">
-							<h3 class="panel-title">Uploaded File Structure Incorrect</h3>
-						</div>
-						<div class="panel-body">
-							<span id="flashmsg"><%=session.getAttribute("flashmsg") %></span><% session.removeAttribute("flashmsg");%>
-						</div>
-					</div>
-				<%} else { %>
-					<div class="panel panel-success">
-						<div class="panel-heading">
-							<h3 class="panel-title">Uploaded File Structure Incorrect</h3>
-						</div>
-						<div class="panel-body">
-							<span id="flashmsg"><%=session.getAttribute("flashmsg") %></span><% session.removeAttribute("flashmsg");%>
-						</div>
-					</div>
-				<%} %>
+			<div class="panel panel-danger">
+				<div class="panel-heading">
+					<h3 class="panel-title">Uploaded File Structure Incorrect</h3>
+				</div>
+				<div class="panel-body">
+					<span id="flashmsg"><%=session.getAttribute("flashmsg") %></span><% session.removeAttribute("flashmsg");%>
+				</div>
+			</div>
 			<%} %>			
 		</div>
 	</div>	
@@ -282,6 +265,6 @@
 	        
 	    });	    
 	</script>
-	<%} %>
+	
 </body>
 </html>

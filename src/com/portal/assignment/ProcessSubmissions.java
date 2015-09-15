@@ -71,8 +71,7 @@ public class ProcessSubmissions extends HttpServlet {
 						dbm.updateProcessedScoreFeedback(emailid, assignmentname, filename, "SUCCESS", jobj.get("summary").toString(), jobj.get("score").toString());
 					} else {
 						dbm.updateProcessedScoreFeedback(emailid, assignmentname, filename, "ERROR", jobj.get("summary").toString(), jobj.get("score").toString());
-					}
-					
+					}					
 				}				
 			}
 		}

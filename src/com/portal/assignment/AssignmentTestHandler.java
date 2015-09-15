@@ -1,15 +1,10 @@
 package com.portal.assignment;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,23 +20,22 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 
-import org.apache.commons.io.FileDeleteStrategy;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONObject;
 
 /**
- * Servlet implementation class AssignmentHandler
+ * Servlet implementation class AssignmentTestHandler
  */
-@WebServlet("/AssignmentHandler")
+@WebServlet("/AssignmentTestHandler")
 @MultipartConfig
-public class AssignmentHandler extends HttpServlet {
+public class AssignmentTestHandler extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private static final int BUFFER_SIZE = 4096;
        
     /**
      * @see HttpServlet#HttpServlet()
      */
-    public AssignmentHandler() {
+    public AssignmentTestHandler() {
         super();
         // TODO Auto-generated constructor stub
     }
@@ -61,18 +55,11 @@ public class AssignmentHandler extends HttpServlet {
 		process(request, response);
 	}
 	
+	
 	protected void process(HttpServletRequest request, HttpServletResponse response){
 		Part filePart;
 		String fileName = ""; String checkFolderOP = "";
 		
-		HttpSession sess = request.getSession(false);
-		try {
-			if(sess == null)
-				response.sendRedirect("index.jsp");
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
 		
 		String AssignmentName = request.getParameter("selectedattribute");
 		System.out.println("AssignmentName: "+AssignmentName);
@@ -96,7 +83,7 @@ public class AssignmentHandler extends HttpServlet {
 			rawAssgnDir.mkdir();
 		
 		//Create userfolder in "RawFiles"
-		String rawPathUser = File.separator+"tmp"+File.separator+"AssignmentSubmissions"+File.separator+"RawFiles"+File.separator+AssignmentName+File.separator+sess.getAttribute("loggeduser");
+		String rawPathUser = File.separator+"tmp"+File.separator+"AssignmentSubmissions"+File.separator+"RawFiles"+File.separator+AssignmentName+File.separator+"melvin.m@taramt.com";
 		File rawDirUser = new File(rawPathUser);
 		if(!rawDirUser.exists())
 			rawDirUser.mkdir();
@@ -113,7 +100,7 @@ public class AssignmentHandler extends HttpServlet {
 		if(!extractAssgnDir.exists())
 			extractAssgnDir.mkdir();		
 		
-		String extractPathUser = File.separator+"tmp"+File.separator+"AssignmentSubmissions"+File.separator+"ExtractedFiles"+File.separator+AssignmentName+File.separator+sess.getAttribute("loggeduser");
+		String extractPathUser = File.separator+"tmp"+File.separator+"AssignmentSubmissions"+File.separator+"ExtractedFiles"+File.separator+AssignmentName+File.separator+"melvin.m@taramt.com";
 		File extractDirUser = new File(extractPathUser);
 		if(!extractDirUser.exists())
 			extractDirUser.mkdir();
@@ -122,11 +109,14 @@ public class AssignmentHandler extends HttpServlet {
 				
 		
 		String errs = "";
+		String operationsLine = "";
 		boolean folder_desc_state = false;
 		try {
 			filePart = request.getPart("file-0a");			
 			//fileName = System.currentTimeMillis()+"_"+getFileName(filePart).replaceAll("\\s+", "_");
 			fileName = getFileName(filePart).replaceAll("\\s+", "_");
+			
+			System.out.println("File Name: "+ fileName);
 			if(fileName != null && !fileName.trim().equals("")) {
 					
 					String zipLocationTempFile = rawDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0]+"_tmp101"+"."+fileName.split("\\.")[1];
@@ -148,12 +138,11 @@ public class AssignmentHandler extends HttpServlet {
 						
 					/*
 					 * Extract the contents of the ZIP file and place it in "ExtractedFiles" folder under the foldername of the ZipFile
-					 */
-						
-						
+					 */						
 						//Version Control
 						DBManager dbm = new DBManager();
-						int count = dbm.getVersionCount(sess.getAttribute("loggeduser").toString(), AssignmentName);
+						int count = dbm.getVersionCount("melvin.m@taramt.com".toString(), AssignmentName);
+						operationsLine = operationsLine + "No. of Submissions (Same User ~ Same Assignment) : "+count + " \n ";
 						if(count > 0) {
 							//rename old recent folder here	with version
 							String folderLocation = extractDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0];
@@ -163,6 +152,7 @@ public class AssignmentHandler extends HttpServlet {
 							System.out.println("Renaming Directory -103");
 							//renameDirectory(dir,toDir);
 							copyDirectoryToNewDirectory(folderLocation, toFolderLocation);
+							operationsLine = operationsLine + "Copied Directory from (Not FIRST): "+folderLocation + " TO: " + toFolderLocation + " \n ";
 							//copyFileToNewFile(folderLocation, toFolderLocation);
 							System.out.println("Done Directory -103");
 							//rename old recent zipfile here with version
@@ -170,8 +160,9 @@ public class AssignmentHandler extends HttpServlet {
 							System.out.println("Renaming Zip Version -104");
 							//renameZip(zipDir, rawDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0]+"_V"+count+"."+fileName.split("\\.")[1]);
 							copyFileToNewFile(zipLocation, rawDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0]+"_V"+count+"."+fileName.split("\\.")[1]);
+							operationsLine = operationsLine + "Copied File to New File (NOT FIRST): "+zipLocation + " To: " + rawDirUser.getAbsolutePath()+File.separator+fileName.split("\\.")[0]+"_V"+count+"."+fileName.split("\\.")[1] + " \n ";
 							System.out.println("Done Zip Version -104");
-							dbm.updateVersion(sess.getAttribute("loggeduser").toString(), AssignmentName, fileName.split("\\.")[0], fileName.split("\\.")[0]+"_V"+count);
+							dbm.updateVersion("melvin.m@taramt.com".toString(), AssignmentName, fileName.split("\\.")[0], fileName.split("\\.")[0]+"_V"+count);
 							System.out.println("COUNT : "+count);
 						}							
 						//Version Control
@@ -179,40 +170,23 @@ public class AssignmentHandler extends HttpServlet {
 						System.out.println("Renaming from tempfile to actual filename -101");
 						//File zipDir0 = new File(zipLocationTempFile);
 						//System.out.println("ZipDir0: "+zipDir0.exists()+" || "+zipDir0.canWrite());
-						copyFileToNewFile(zipLocationTempFile, zipLocation);		
+						copyFileToNewFile(zipLocationTempFile, zipLocation);
+						operationsLine = operationsLine + "Copied File from (FIRST): "+zipLocationTempFile + " TO: " + zipLocation + " \n ";
 						//renameZip(new File(zipLocationTempFile), zipLocation);
 						System.out.println("Done -101");
 						
 					//ArrayList<String> results = unzip(zipLocation, extractLocation);
 					unzip(zipLocation, extractLocation);
+					operationsLine = operationsLine + "Unzipped Contents: "+" \n ";
 					
 					String testcaseFile = dbm.getTestCaseFileName(AssignmentName);
 					//Copy TestCase file for the assignment to extractLocation
 					copyTestCase(rawTestPath+File.separator+testcaseFile, extractLocation+File.separator+testcaseFile);
 					
-					/*if(results != null){
-						DBManager dbm = new DBManager();
-						if(results.get(0).trim().equals("0")){
-							if(!dbm.checkFileExists(fileName.split("\\.")[0]))
-								dbm.insertUserDetails(sess.getAttribute("loggeduser").toString(), fileName.split("\\.")[0], "VERIFYING", "");
-							else
-								dbm.updateUserDetails(fileName.split("\\.")[0], "VERIFYING", "");
-						} else {
-							String errStatement = "Error Code: "+results.get(0)+"\n"+"Error: "+results.get(2)+"\n"+"Output: "+results.get(1);
-							if(!dbm.checkFileExists(fileName.split("\\.")[0]))
-								dbm.insertUserDetails(sess.getAttribute("loggeduser").toString(), fileName.split("\\.")[0], "FAIL", errStatement);
-							else
-								dbm.updateUserDetails(fileName.split("\\.")[0], "FAIL", errStatement);
-						}
-						System.out.println("Done");
-					} else {
-						System.out.println("Fail");
-					}*/
 					
-					
-					//System.out.println(dbm.checkFileExists(fileName.split("\\.")[0], AssignmentName, sess.getAttribute("loggeduser").toString()));
-					if(!dbm.checkFileExists(fileName.split("\\.")[0], AssignmentName, sess.getAttribute("loggeduser").toString())){
-						dbm.insertUserDetails(sess.getAttribute("loggeduser").toString(), AssignmentName, fileName.split("\\.")[0], "VERIFYING", "");
+					//System.out.println(dbm.checkFileExists(fileName.split("\\.")[0], AssignmentName, "melvin.m@taramt.com".toString()));
+					if(!dbm.checkFileExists(fileName.split("\\.")[0], AssignmentName, "melvin.m@taramt.com")){
+						dbm.insertUserDetails("melvin.m@taramt.com", AssignmentName, fileName.split("\\.")[0], "VERIFYING", "");
 					} else {
 						dbm.updateUserDetails(fileName.split("\\.")[0], AssignmentName, fileName.split("\\.")[0], "VERIFYING", "");
 					}
@@ -239,18 +213,25 @@ public class AssignmentHandler extends HttpServlet {
 		try {
 			
 			pout = response.getWriter();
+			pout.write("<html><body>File name : "+fileName+" <br/> ");
+			pout.write("Does - Submitted ZIP file content match that of Submission Structure: "+ folder_desc_state);
 			if(errs.equals("")){
 				pout.print("Success");
-				sess.setAttribute("flashmsg","Success");
+				pout.write("Flash Message: Success");
+				//sess.setAttribute("flashmsg","Success"+" \n ");
 			}
 			else{
 				pout.print("Fail");
-				sess.setAttribute("flashmsg","Fail");
+				pout.write("Flash Message: Fail"+ " <br/> ");
+				//sess.setAttribute("flashmsg","Fail");
 			}
 			if(!folder_desc_state){
-				sess.setAttribute("flashmsg",""+checkFolderOP+"");
+				pout.write("Flash Message: "+checkFolderOP+" <br/> ");
+				//sess.setAttribute("flashmsg",""+checkFolderOP+"");
 			}
-			response.sendRedirect("SubmissionPage.jsp");
+			pout.write("</body></html>");
+			//response.sendRedirect("SubmissionPage.jsp");
+			pout.flush();
 			pout.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -302,13 +283,6 @@ public class AssignmentHandler extends HttpServlet {
         }
         zipIn.close();
         
-        /*System.out.println("Evaluating....");
-        Evaluator eva = new Evaluator();
-        eva.processCode(destDirectory);
-        ArrayList<String> execOutput = eva.getOutput();
-        System.out.println("Evaluated !!");
-        //System.out.println(execOutput.toString());
-        return execOutput;*/
     }
 	
 	/**
@@ -374,19 +348,6 @@ public class AssignmentHandler extends HttpServlet {
 		return "true";
 	}
     
-    private void renameDirectory(File dir, File toDir) {
-		// TODO Auto-generated method stub
-    	System.out.println("isDirectory: "+dir.isDirectory() + "||"+ dir.getAbsolutePath()+" || "+toDir.getAbsolutePath());
-		if(dir.isDirectory()) {
-			System.out.println("renameDirectory: "+dir.renameTo(toDir));
-		}
-	}
-    
-	private void renameZip(File oldName, String newName){
-		boolean state = oldName.renameTo(new File(newName));
-		System.out.println("renameZip: "+state+" || "+oldName.getAbsolutePath()+" || "+newName);
-	}
-	
 	private void copyFileToNewFile(String origin, String destination){
 		System.out.println("origin: "+origin+" || dest: "+destination);
 		File fin = new File(origin);
